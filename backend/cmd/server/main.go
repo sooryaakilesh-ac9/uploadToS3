@@ -11,10 +11,12 @@ func main() {
 	// TODO define in environment file
 	PORT := 8080
 
-	router.RegisterHandlers()
+	mux := http.NewServeMux()
+
+	router.RegisterHandlers(mux)
 
 	log.Printf("Listening on PORT: %v...\n", PORT)
-	if err := http.ListenAndServe(fmt.Sprintf("localhost:%v", PORT), nil); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf("localhost:%v", PORT), mux); err != nil {
 		log.Printf("Unable to start server on PORT: %v", PORT)
 	}
 }

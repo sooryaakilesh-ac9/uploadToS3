@@ -1,6 +1,8 @@
 package handler
 
-import "net/http"
+import (
+	"net/http"
+)
 
 // handles import of data in the form of excel of a google sheet
 func HandleQuotesImport(w http.ResponseWriter, r *http.Request) {
@@ -14,6 +16,8 @@ func HandleQuotesImport(w http.ResponseWriter, r *http.Request) {
 func HandleQuotesUpload(w http.ResponseWriter, r *http.Request) {
 	// todo verify the json before handling (use middleware)
 	// create a quote object based on the input
+
+	w.Write([]byte("working"))
 
 	// todo write to DB
 	// write in s3 bucket
