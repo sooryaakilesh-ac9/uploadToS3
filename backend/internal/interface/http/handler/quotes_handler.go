@@ -1,6 +1,10 @@
 package handler
 
 import (
+	"backend/pkg/quotes"
+	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 )
 
@@ -14,10 +18,22 @@ func HandleQuotesImport(w http.ResponseWriter, r *http.Request) {
 
 // handles the upload of a single quote
 func HandleQuotesUpload(w http.ResponseWriter, r *http.Request) {
-	// todo verify the json before handling (use middleware)
 	// create a quote object based on the input
+	var quote quotes.Quote
 
-	w.Write([]byte("working"))
+	data, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "unable to read JSON data", http.StatusInternalServerError)
+		return
+	}
+	r.Body.Close()
+
+	if err := json.Unmarshal(data, &quote); err != nil {
+		http.Error(w, "unable to read JSON data", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Printf("%+v", string(data))
 
 	// todo write to DB
 	// write in s3 bucket

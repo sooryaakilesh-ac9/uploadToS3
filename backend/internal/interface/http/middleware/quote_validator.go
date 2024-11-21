@@ -11,12 +11,14 @@ import (
 	"strings"
 )
 
+// checks if the JSON is valid and contains all fields
+// http methods are checked
 func QuotesJsonAndMethodValidator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var quote quotes.Quote
 
 		// checks if the http method is valid or not
-		if !(r.Method == "POST" || r.Method == "GET") {
+		if !(r.Method == http.MethodPost || r.Method == http.MethodGet) {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		} 
@@ -27,6 +29,7 @@ func QuotesJsonAndMethodValidator(next http.Handler) http.Handler {
 			http.Error(w, "Unable to read request body", http.StatusBadRequest)
 			return
 		}
+		defer r.Body.Close()
 
 		// Create a map to store the incoming JSON data
 		var jsonMap map[string]interface{}
