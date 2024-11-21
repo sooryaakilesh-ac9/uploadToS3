@@ -7,6 +7,11 @@ import (
 
 // register handlers
 func RegisterHandlers() {
+	// handlers regarding quotes
 	http.HandleFunc("/quotes/import", handler.HandleQuotesImport)
 	http.HandleFunc("/quotes", handler.HandleQuotesUpload)
+
+	// handlers regarding images
+	http.HandleFunc("/images/import", handler.HandleImagesImport)
+	http.HandleFunc("/images", handler.HandleImagesUpload)
 }
