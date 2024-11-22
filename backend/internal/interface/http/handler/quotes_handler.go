@@ -9,11 +9,43 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
+	"time"
 
 	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
 )
+
+// Quote represents a single quote with metadata
+type Quote struct {
+	ID   int      `json:"id"`
+	Text string   `json:"text"`
+	Tags []string `json:"tags"`
+	Lang string   `json:"lang"`
+}
+
+// Schema defines the format of the quotes data
+type Schema struct {
+	Format   string `json:"format"`
+	Encoding string `json:"encoding"`
+	FileType string `json:"fileType"`
+}
+
+// QuotesMetadata contains metadata about the quotes collection
+type QuotesMetadata struct {
+	Version     string `json:"version"`
+	LastUpdated string `json:"lastUpdated"`
+	TotalQuotes int    `json:"totalQuotes"`
+	Url         string `json:"url"`
+	Schema      Schema `json:"schema"`
+}
+
+// Quotes is the top-level structure containing both quotes and metadata
+type Quotes struct {
+	Quotes   []Quote        `json:"quotes"`
+	Metadata QuotesMetadata `json:"metadata"`
+}
 
 func extractSpreadsheetID(sheetLink string) (string, error) {
 	// Parse the URL to validate it and extract components
@@ -43,27 +75,92 @@ func getService() (*sheets.Service, error) {
 	return srv, nil
 }
 
-func readData(service *sheets.Service, spreadsheetID string) error {
-	// controls what should be read from which sheet
-	readRange := "English"
+// ReadData reads quote data from a Google Sheet and processes it
+func ReadData(service *sheets.Service, spreadsheetID string) error {
+	const readRange = "English"
 
 	resp, err := service.Spreadsheets.Values.Get(spreadsheetID, readRange).Do()
 	if err != nil {
-		return fmt.Errorf("unable to read data: %v", err)
+		return fmt.Errorf("unable to read data from sheet: %w", err)
 	}
 
-	// Check if there are values in the sheet
 	if len(resp.Values) == 0 {
-		fmt.Println("No data found.")
-		return nil
+		return fmt.Errorf("no data found in sheet")
 	}
 
-	// Print each cell with row and column indices
-	for rowIndex, row := range resp.Values {
-		for colIndex, cell := range row {
-			fmt.Printf("Row %d, Column %d: %v\n", rowIndex+1, colIndex+1, cell)
-		}
+	quotes := processRows(resp.Values)
+	metadata := createMetadata(len(quotes))
+
+	outputData := Quotes{
+		Quotes:   quotes,
+		Metadata: metadata,
 	}
+
+	if err := WriteJSONToFile("quotes_output.json", outputData); err != nil {
+		return fmt.Errorf("error writing JSON to file: %w", err)
+	}
+
+	fmt.Println("JSON data successfully written to quotes_output.json")
+	return nil
+}
+
+// processRows converts sheet rows into Quote structs
+func processRows(rows [][]interface{}) []Quote {
+	var quotes []Quote
+
+	for i, row := range rows {
+		if i == 0 || len(row) < 2 {
+			continue // Skip header row and invalid rows
+		}
+
+		quote := Quote{
+			ID:   i,
+			Text: fmt.Sprintf("%v", row[1]), // Safely convert interface{} to string
+			Tags: processTags(fmt.Sprintf("%v", row[0])),
+			Lang: "en-US",
+		}
+
+		quotes = append(quotes, quote)
+	}
+
+	return quotes
+}
+
+// processTags cleans and splits tag string into slice
+func processTags(rawTags string) []string {
+	cleaned := strings.ReplaceAll(rawTags, " ", "")
+	if cleaned == "" {
+		return []string{}
+	}
+	return strings.Split(cleaned, ",")
+}
+
+// createMetadata generates metadata for the quotes collection
+func createMetadata(totalQuotes int) QuotesMetadata {
+	return QuotesMetadata{
+		Version:     "1.0",
+		LastUpdated: time.Now().Format(time.RFC3339),
+		TotalQuotes: totalQuotes,
+		Url:         "https://example.com/quotes", // Update with actual URL
+		Schema: Schema{
+			Format:   "JSON",
+			Encoding: "UTF-8",
+			FileType: "text",
+		},
+	}
+}
+
+// WriteJSONToFile saves the quotes data to a JSON file
+func WriteJSONToFile(filename string, data Quotes) error {
+	jsonData, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return fmt.Errorf("error marshaling JSON: %w", err)
+	}
+
+	if err := os.WriteFile(filename, jsonData, 0644); err != nil {
+		return fmt.Errorf("error writing file: %w", err)
+	}
+
 	return nil
 }
 
@@ -100,7 +197,7 @@ func HandleQuotesImport(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Read data from the sheet
-	if err := readData(service, spreadsheetID); err != nil {
+	if err := ReadData(service, spreadsheetID); err != nil {
 		log.Fatalf("Failed to read data: %v", err)
 	}
 
