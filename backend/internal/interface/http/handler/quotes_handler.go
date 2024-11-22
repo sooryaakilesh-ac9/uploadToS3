@@ -10,8 +10,8 @@ import (
 
 // handles import of data in the form of excel of a google sheet
 func HandleQuotesImport(w http.ResponseWriter, r *http.Request) {
-	// todo verify the json before handling (use middleware)
-	w.Write([]byte("test"))
+	
+	
 	// todo write to DB
 	// write in s3 bucket
 }
