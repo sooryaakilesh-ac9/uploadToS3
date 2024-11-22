@@ -23,34 +23,36 @@ func isValidGoogleSheetsURL(url string) bool {
 }
 
 // checks if the given link is a valid google spread sheet link
+// CheckQuotesLink validates the Google Sheets URL and ensures the correct HTTP method.
 func CheckQuotesLink(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var url quotes.GoogleSheetsLink
 
-		// checks if the http method is valid or not
+		// Check if the HTTP method is POST
 		if r.Method != http.MethodPost {
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			http.Error(w, "Method Not Allowed. Only POST requests are allowed.", http.StatusMethodNotAllowed)
 			return
 		}
 
+		// Read the request body
 		data, err := io.ReadAll(r.Body)
 		if err != nil {
-			http.Error(w, "unable to read from JSON", http.StatusInternalServerError)
+			http.Error(w, "Unable to read request body", http.StatusInternalServerError)
 			return
 		}
 
+		// Unmarshal JSON data into the struct
 		if err := json.Unmarshal(data, &url); err != nil {
-			http.Error(w, "unable to unmarshall JSON data", http.StatusInternalServerError)
+			http.Error(w, "Unable to unmarshal JSON data", http.StatusBadRequest)
 			return
 		}
 
-		if isValidGoogleSheetsURL(url.GoogleSheetsLink) {
-			fmt.Printf("valid google sheets link\n")
-		} else {
-			http.Error(w, "invalid google sheets link", http.StatusBadRequest)
+		// Validate the Google Sheets link
+		if !isValidGoogleSheetsURL(url.GoogleSheetsLink) {
+			http.Error(w, "Invalid Google Sheets link", http.StatusBadRequest)
 			return
 		}
-
+		r.Body = io.NopCloser(bytes.NewBuffer(data))
 		// Call the next handler
 		next.ServeHTTP(w, r)
 	})
