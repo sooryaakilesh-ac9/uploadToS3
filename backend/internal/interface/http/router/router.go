@@ -9,7 +9,10 @@ import (
 // register handlers
 func RegisterHandlers(mux *http.ServeMux) {
 	// handlers regarding quotes
-	http.HandleFunc("/quotes/import", handler.HandleQuotesImport)
+	// http.HandleFunc("/quotes/import", handler.HandleQuotesImport)
+	mux.Handle("/quotes/import", middleware.CheckQuotesLink(
+		http.HandlerFunc(handler.HandleQuotesImport)),
+	)
 	// checks if all the fields are present and if the JSON is valid
 	// also http method is checked
 	mux.Handle("/quotes", middleware.QuotesJsonAndMethodValidator(
@@ -18,6 +21,8 @@ func RegisterHandlers(mux *http.ServeMux) {
 
 	// handlers regarding images
 	http.HandleFunc("/images/import", handler.HandleImagesImport)
+	// http method is checked
+	// checks if the image is of valid type and is within the size limit
 	mux.Handle("/images", middleware.ImageAndMethodValidator(
 		http.HandlerFunc(handler.HandleImagesUpload),
 	))

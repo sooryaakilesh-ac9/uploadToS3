@@ -1,5 +1,9 @@
 package quotes
 
+type GoogleSheetsLink struct {
+	GoogleSheetsLink string `json:"googleSheetsLink"`
+}
+
 type Quotes struct {
 	Quotes []Quote `json:"quotes"`
 }

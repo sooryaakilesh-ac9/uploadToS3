@@ -8,8 +8,53 @@ import (
 	"io"
 	"net/http"
 	"reflect"
+	"regexp"
 	"strings"
 )
+
+func isValidGoogleSheetsURL(url string) bool {
+	// Regex pattern to match Google Sheets URLs
+	const googleSheetsURLPattern = `^https://docs\.google\.com/spreadsheets/d/[a-zA-Z0-9_-]+(/.*)?$`
+
+	re := regexp.MustCompile(googleSheetsURLPattern)
+
+	// Check if the URL matches the pattern
+	return re.MatchString(url)
+}
+
+// checks if the given link is a valid google spread sheet link
+func CheckQuotesLink(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var url quotes.GoogleSheetsLink
+
+		// checks if the http method is valid or not
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		data, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "unable to read from JSON", http.StatusInternalServerError)
+			return
+		}
+
+		if err := json.Unmarshal(data, &url); err != nil {
+			http.Error(w, "unable to unmarshall JSON data", http.StatusInternalServerError)
+			return
+		}
+
+		if isValidGoogleSheetsURL(url.GoogleSheetsLink) {
+			fmt.Printf("valid google sheets link\n")
+		} else {
+			http.Error(w, "invalid google sheets link", http.StatusBadRequest)
+			return
+		}
+
+		// Call the next handler
+		next.ServeHTTP(w, r)
+	})
+}
 
 // checks if the JSON is valid and contains all fields
 // http methods are checked
@@ -21,7 +66,7 @@ func QuotesJsonAndMethodValidator(next http.Handler) http.Handler {
 		if !(r.Method == http.MethodPost || r.Method == http.MethodGet) {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
-		} 
+		}
 
 		// Read the request body
 		data, err := io.ReadAll(r.Body)
