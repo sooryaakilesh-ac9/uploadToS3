@@ -1,0 +1,21 @@
+{
+    "quotes": [
+      {
+        "id": 1,
+        "text": "quote content",
+        "tags": ["tag", "tag", "tag"],    
+        "lang": "en-US"
+      }
+    ],
+    "metadata": {
+      "version": "1.0",
+      "lastUpdated": "2024-04-01T10:00:00Z",
+      "totalQuotes": 2,
+      "url": "path",
+      "schema": {
+        "format": "JSON",
+        "encoding": "UTF-8",
+        "fileType": "text | binary ..."
+      }
+    }
+  }
