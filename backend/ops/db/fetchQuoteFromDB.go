@@ -2,10 +2,16 @@ package db
 
 import (
 	"backend/pkg/quotes"
+	"backend/utils"
 	"fmt"
 
 	"gorm.io/gorm"
 )
+
+// unit tests
+//invalid quoteID
+//quoteID not present
+//different type
 
 // FetchQuoteFromDB fetches a quote by its ID from the database
 func FetchQuoteFromDB(quoteId int) (*quotes.Quote, error) {
@@ -21,12 +27,13 @@ func FetchQuoteFromDB(quoteId int) (*quotes.Quote, error) {
 	// Fetch the quote from the database by ID
 	if err := db.First(&quote, quoteId).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			// If no record is found, return a custom error message
 			return nil, fmt.Errorf("quote with ID %d not found", quoteId)
 		}
-		// If there's a different error, return it
 		return nil, fmt.Errorf("failed to fetch quote: %w", err)
 	}
+
+	// a standalone module which conveters the given data into JSON format
+	utils.JsonHandler(quote)
 
 	// Return the fetched quote
 	return &quote, nil

@@ -9,6 +9,10 @@ import (
 	"gorm.io/gorm"
 )
 
+// todo implement unit test cases
+// todo add the hardcoded values to the ENV file
+
+// connect to DB and returns an instance of the DB
 func ConnectToDB() (*gorm.DB, error) {
 	// Database connection string
 	dsn := "host=localhost user=postgres password=toor dbname=postgres port=5432 sslmode=disable"

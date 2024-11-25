@@ -229,5 +229,5 @@ func HandleQuotesUpload(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("%+v", string(data))
 
 	// todo write to DB
-	// write in s3 bucket
+	// todo write in s3 bucket(local stack)
 }

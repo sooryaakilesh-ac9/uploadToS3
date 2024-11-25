@@ -3,19 +3,21 @@ package main
 import (
 	"backend/internal/interface/http/router"
 	"backend/ops/db"
+	"backend/utils"
 	"fmt"
 	"log"
 	"net/http"
 )
 
+// todo add the haredcoded values to the ENV file
+
 func main() {
-	// TODO define in environment file
 	PORT := 8080
 
 	mux := http.NewServeMux()
-
 	router.RegisterHandlers(mux)
 
+	// test connection ping
 	_, err := db.ConnectToDB()
 	if err != nil {
 		log.Printf("%v", err)
@@ -26,8 +28,11 @@ func main() {
 	if err != nil {
 		log.Print(err)
 	}
-
-	log.Printf("%+v", quote)
+	jsonQuote, err := utils.JsonHandler(quote)
+	if err != nil {
+		log.Print(err)
+	}
+	fmt.Println(string(jsonQuote))
 
 	log.Printf("Listening on PORT: %v...\n", PORT)
 	if err := http.ListenAndServe(fmt.Sprintf("localhost:%v", PORT), mux); err != nil {
