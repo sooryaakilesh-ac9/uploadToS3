@@ -5,19 +5,19 @@ import (
 	"backend/pkg/quotes"
 	"fmt"
 	"log"
+	"os"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 // todo implement unit test cases
-// todo add the hardcoded values to the ENV file
 
 // connect to DB and returns an instance of the DB
 // ConnectToDB connects to the PostgreSQL database and ensures the necessary tables exist
 func ConnectToDB() (*gorm.DB, error) {
 	// Database connection string (todo: move to environment variables)
-	dsn := "host=localhost user=postgres password=toor dbname=postgres port=5432 sslmode=disable"
+	dsn := os.Getenv("DB_CONN")
 
 	// Open a DB connection
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})

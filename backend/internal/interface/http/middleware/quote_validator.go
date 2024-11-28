@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"reflect"
 	"regexp"
 	"strings"
@@ -16,11 +17,12 @@ import (
 
 func isValidGoogleSheetsURL(url string) bool {
 	// Regex pattern to match Google Sheets URLs
-	const googleSheetsURLPattern = `^https://docs\.google\.com/spreadsheets/d/[a-zA-Z0-9_-]+(/.*)?$`
+	googleSheetsURLPattern := os.Getenv("GOOGLE_SHEETS_URL_PATTERN")
+	if googleSheetsURLPattern == "" {
+		googleSheetsURLPattern = `^https:\/\/docs\.google\.com\/spreadsheets\/d\/[a-zA-Z0-9-_]+\/edit[^\/]*$` // default pattern
+	}
 
 	re := regexp.MustCompile(googleSheetsURLPattern)
-
-	// Check if the URL matches the pattern
 	return re.MatchString(url)
 }
 

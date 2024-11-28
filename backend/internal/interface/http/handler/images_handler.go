@@ -20,7 +20,7 @@ import (
 
 // handles import of data
 func HandleImagesImport(w http.ResponseWriter, r *http.Request) {
-	// todo verify the json before handling (use middleware)
+	// todo implement batch processing
 
 	// todo write to DB
 	// write in s3 bucket
@@ -67,7 +67,7 @@ func HandleImagesUpload(w http.ResponseWriter, r *http.Request) {
 	// Write to database
 	dbConn, err := db.ConnectToDB()
 	if err != nil {
-		http.Error(w, "failed to connect to database: %w", 500)
+		http.Error(w, "failed to connect to database: %w", http.StatusInternalServerError)
 		return
 	}
 

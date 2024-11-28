@@ -1,6 +1,10 @@
 package middleware
 
-import "net/http"
+import (
+	"net/http"
+	"os"
+	"strconv"
+)
 
 // checks if the image is of valid type
 // allowed image types (jpg, png)
@@ -10,10 +14,15 @@ func ImageAndMethodValidator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// setup ENV file to contain these details
 		// Maximum upload size in MB
-		const maxUploadMB = 10
+		maxUploadMB := 10 // Default value
+		if envMB := os.Getenv("MAX_UPLOAD_MB"); envMB != "" {
+			if val, err := strconv.ParseInt(envMB, 10, 64); err == nil {
+				maxUploadMB = int(val)
+			}
+		}
 
 		// Convert MB to bytes
-		var maxUploadSize = int64(maxUploadMB << 20) 
+		maxUploadSize := int64(maxUploadMB << 20)
 
 		// Validate the methods (only POST and GET are allowed)
 		if !(r.Method == http.MethodPost || r.Method == http.MethodGet) {

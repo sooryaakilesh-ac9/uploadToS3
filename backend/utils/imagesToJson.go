@@ -54,7 +54,7 @@ func ImagesToJson(images []images.Flyer) error {
 		Version:     "1.0",
 		LastUpdated: time.Now().Format(time.RFC3339),
 		TotalFlyers: len(images),
-		Url:         "https://example.com/images", // Replace with actual URL or dynamic generation
+		Url:         os.Getenv("IMAGE_METADATA_URL"), // Replace with actual URL or dynamic generation
 		Schema: Schema{
 			Format:   "JSON",
 			Encoding: "UTF-8",
@@ -74,7 +74,7 @@ func ImagesToJson(images []images.Flyer) error {
 	}
 
 	// Create the JSON file to store the result
-	file, err := os.Create("imagesMetadata.json")
+	file, err := os.Create(os.Getenv("IMAGE_METADATA_FILENAME"))
 	if err != nil {
 		return fmt.Errorf("unable to create JSON file: %v", err)
 	}
@@ -86,8 +86,10 @@ func ImagesToJson(images []images.Flyer) error {
 		return fmt.Errorf("unable to write JSON data to file: %v", err)
 	}
 
-	UploadImagesMetadataToS3LS("/Users/sooryaakilesh/Documents/contentService/backend/cmd/server/imagesMetadata.json", "/imagesMetadata.json")
+	metadataPath := os.Getenv("IMAGE_METADATA_PATH")
+	metadataFileName := "/" + os.Getenv("IMAGE_METADATA_FILENAME")
+	UploadImagesMetadataToS3LS(metadataPath, metadataFileName)
 
-	fmt.Println("JSON file 'imagesMetadata.json' has been created successfully.")
+	fmt.Printf("JSON file %v has been created successfully.\n", metadataFileName)
 	return nil
 }

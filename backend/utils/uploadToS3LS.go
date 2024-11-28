@@ -71,10 +71,10 @@ func UploadToS3LSImages(path string, fileName string) error {
 
 func UploadQuotesMetadataToS3LS(path string, fileName string) error {
 	sess, err := session.NewSession(&aws.Config{
-		Region:           aws.String("us-east-1"),
-		Endpoint:         aws.String("http://localhost:4566"),
+		Region:           aws.String(os.Getenv("S3LS_REGION")),
+		Endpoint:         aws.String(os.Getenv("S3LS_ENDPOINT")),
 		S3ForcePathStyle: aws.Bool(true),
-		Credentials:      credentials.NewStaticCredentials("test", "test", ""),
+		Credentials:      credentials.NewStaticCredentials(os.Getenv("S3LS_ID"), os.Getenv("S3LS_SECRET"), os.Getenv("S3LS_TOKEN")),
 	})
 	if err != nil {
 		return fmt.Errorf("unable to create session: %v", err)
@@ -84,7 +84,7 @@ func UploadQuotesMetadataToS3LS(path string, fileName string) error {
 	svc := s3.New(sess)
 
 	// Define the S3 bucket name and folder path
-	bucketName := "my-local-bucket"
+	bucketName := os.Getenv("S3LS_BUCKET_NAME")
 	folderPath := "quotes/"
 
 	// Create S3 bucket (if it doesn't exist)
@@ -127,8 +127,8 @@ func UploadQuotesMetadataToS3LS(path string, fileName string) error {
 
 func UploadImagesMetadataToS3LS(path string, fileName string) error {
 	sess, err := session.NewSession(&aws.Config{
-		Region:           aws.String("us-east-1"),
-		Endpoint:         aws.String("http://localhost:4566"),
+		Region:           aws.String(os.Getenv("S3LS_REGION")),
+		Endpoint:         aws.String(os.Getenv("S3LS_ENDPOINT")),
 		S3ForcePathStyle: aws.Bool(true),
 		Credentials:      credentials.NewStaticCredentials("test", "test", ""),
 	})
@@ -140,7 +140,7 @@ func UploadImagesMetadataToS3LS(path string, fileName string) error {
 	svc := s3.New(sess)
 
 	// Define the S3 bucket name and folder path
-	bucketName := "my-local-bucket"
+	bucketName := os.Getenv("S3LS_BUCKET_NAME")
 	folderPath := "images/"
 
 	// Create S3 bucket (if it doesn't exist)
