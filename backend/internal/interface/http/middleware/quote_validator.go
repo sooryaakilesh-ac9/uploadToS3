@@ -1,7 +1,9 @@
 package middleware
 
 import (
+	"backend/ops/db"
 	"backend/pkg/quotes"
+	"backend/utils"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -65,7 +67,20 @@ func QuotesJsonAndMethodValidator(next http.Handler) http.Handler {
 		var quote quotes.Quote
 
 		// checks if the http method is valid or not
-		if !(r.Method == http.MethodPost || r.Method == http.MethodGet) {
+		if r.Method == http.MethodGet {
+			quotes, err := db.FetchAllQuotesFromDB()
+			if err != nil {
+				http.Error(w, "unable to fetch data from DB", http.StatusInternalServerError)
+			}
+
+			// send to quotesToJson
+			utils.QuotesToJson(quotes)
+			// get quotes metadata
+
+			return
+		}
+
+		if !(r.Method == http.MethodPost) {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}

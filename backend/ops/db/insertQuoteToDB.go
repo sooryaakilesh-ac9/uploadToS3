@@ -4,11 +4,9 @@ import (
 	"backend/pkg/quotes"
 	"fmt"
 	"log"
-
-	"github.com/lib/pq" // Required for array handling
 )
 
-func InsertQuoteToDB() error {
+func InsertQuoteToDB(quote quotes.Quote) error {
 	// Connect to the database
 	db, err := ConnectToDB()
 	if err != nil {
@@ -19,14 +17,6 @@ func InsertQuoteToDB() error {
 	err = db.AutoMigrate(&quotes.Quote{})
 	if err != nil {
 		return fmt.Errorf("failed to migrate database schema: %w", err)
-	}
-
-	// Create a mock quote instance
-	tags := pq.StringArray{"philosophy", "literature", "existentialism"}
-	quote := &quotes.Quote{
-		Text: "To be or not to be, that is the question.",
-		Tags: tags,
-		Lang: "en",
 	}
 
 	// Insert the quote into the database using SQL directly to debug

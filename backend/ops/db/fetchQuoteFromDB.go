@@ -38,3 +38,23 @@ func FetchQuoteFromDB(quoteId int) (*quotes.Quote, error) {
 	// Return the fetched quote
 	return &quote, nil
 }
+
+func FetchAllQuotesFromDB() ([]quotes.Quote, error) {
+	var quotes []quotes.Quote
+
+	// Connect to the database
+	db, err := ConnectToDB()
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to DB: %w", err)
+	}
+
+	// Fetch all quotes
+	if err := db.Find(&quotes).Error; err != nil {
+		return nil, fmt.Errorf("failed to fetch quotes: %w", err)
+	}
+
+	fmt.Printf("fetched all quotes from DB!\n")
+
+	return quotes, nil
+}
+

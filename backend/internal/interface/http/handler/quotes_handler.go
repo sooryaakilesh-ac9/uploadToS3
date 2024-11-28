@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"backend/ops/db"
 	"backend/pkg/quotes"
+	"backend/utils"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,124 +11,95 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
-	"time"
 
+	"github.com/lib/pq"
 	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
+	"gorm.io/gorm"
 )
 
-// Quote represents a single quote with metadata
+const (
+	credentialsFile = "/Users/sooryaakilesh/Downloads/contentservice-442500-a653dca5bcda.json"
+	batchSize       = 100
+	readRange       = "English"
+)
+
 type Quote struct {
-	ID   int      `json:"id"`
-	Text string   `json:"text"`
-	Tags []string `json:"tags"`
-	Lang string   `json:"lang"`
+	Id   int            `json:"id" gorm:"primaryKey"`
+	Text string         `json:"text"`
+	Tags pq.StringArray `gorm:"type:text[];column:tags" json:"tags"`
+	Lang string         `json:"lang"`
 }
 
-// Schema defines the format of the quotes data
 type Schema struct {
 	Format   string `json:"format"`
 	Encoding string `json:"encoding"`
 	FileType string `json:"fileType"`
 }
 
-// QuotesMetadata contains metadata about the quotes collection
 type QuotesMetadata struct {
 	Version     string `json:"version"`
 	LastUpdated string `json:"lastUpdated"`
 	TotalQuotes int    `json:"totalQuotes"`
-	Url         string `json:"url"`
+	URL         string `json:"url"`
 	Schema      Schema `json:"schema"`
 }
 
-// Quotes is the top-level structure containing both quotes and metadata
 type Quotes struct {
 	Quotes   []Quote        `json:"quotes"`
 	Metadata QuotesMetadata `json:"metadata"`
 }
 
 func extractSpreadsheetID(sheetLink string) (string, error) {
-	// Parse the URL to validate it and extract components
 	parsedURL, err := url.Parse(sheetLink)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse URL: %v", err)
 	}
-
-	// Check if the URL contains `/d/` which is used for spreadsheet IDs
 	parts := strings.Split(parsedURL.Path, "/")
 	for i, part := range parts {
 		if part == "d" && i+1 < len(parts) {
 			return parts[i+1], nil
 		}
 	}
-
-	// Return an error if the ID is not found
 	return "", fmt.Errorf("spreadsheet ID not found in URL")
 }
 
 func getService() (*sheets.Service, error) {
 	ctx := context.Background()
-	srv, err := sheets.NewService(ctx, option.WithCredentialsFile("/Users/sooryaakilesh/Downloads/contentservice-442500-a653dca5bcda.json"))
-	if err != nil {
-		return nil, fmt.Errorf("unable to create Sheets service: %v", err)
+	if credentialsFile == "" {
+		return nil, fmt.Errorf("credentials file path is empty")
 	}
-	return srv, nil
+	return sheets.NewService(ctx, option.WithCredentialsFile(credentialsFile))
 }
 
-// ReadData reads quote data from a Google Sheet and processes it
-func ReadData(service *sheets.Service, spreadsheetID string) error {
-	const readRange = "English"
-
+func ReadData(service *sheets.Service, spreadsheetID string) ([]Quote, error) {
 	resp, err := service.Spreadsheets.Values.Get(spreadsheetID, readRange).Do()
 	if err != nil {
-		return fmt.Errorf("unable to read data from sheet: %w", err)
+		return nil, fmt.Errorf("unable to read data from sheet: %w", err)
 	}
-
 	if len(resp.Values) == 0 {
-		return fmt.Errorf("no data found in sheet")
+		return nil, fmt.Errorf("no data found in sheet")
 	}
-
-	quotes := processRows(resp.Values)
-	metadata := createMetadata(len(quotes))
-
-	outputData := Quotes{
-		Quotes:   quotes,
-		Metadata: metadata,
-	}
-
-	if err := WriteJSONToFile("quotes_output.json", outputData); err != nil {
-		return fmt.Errorf("error writing JSON to file: %w", err)
-	}
-
-	fmt.Println("JSON data successfully written to quotes_output.json")
-	return nil
+	return processRows(resp.Values), nil
 }
 
-// processRows converts sheet rows into Quote structs
 func processRows(rows [][]interface{}) []Quote {
-	var quotes []Quote
-
+	quotes := make([]Quote, 0, len(rows)-1)
 	for i, row := range rows {
 		if i == 0 || len(row) < 2 {
-			continue // Skip header row and invalid rows
+			continue
 		}
-
-		quote := Quote{
-			ID:   i,
-			Text: fmt.Sprintf("%v", row[1]), // Safely convert interface{} to string
+		quotes = append(quotes, Quote{
+			Id:   i,
+			Text: fmt.Sprintf("%v", row[1]),
 			Tags: processTags(fmt.Sprintf("%v", row[0])),
 			Lang: "en-US",
-		}
-
-		quotes = append(quotes, quote)
+		})
 	}
-
 	return quotes
 }
 
-// processTags cleans and splits tag string into slice
 func processTags(rawTags string) []string {
 	cleaned := strings.ReplaceAll(rawTags, " ", "")
 	if cleaned == "" {
@@ -135,99 +108,138 @@ func processTags(rawTags string) []string {
 	return strings.Split(cleaned, ",")
 }
 
-// createMetadata generates metadata for the quotes collection
-func createMetadata(totalQuotes int) QuotesMetadata {
-	return QuotesMetadata{
-		Version:     "1.0",
-		LastUpdated: time.Now().Format(time.RFC3339),
-		TotalQuotes: totalQuotes,
-		Url:         "https://example.com/quotes", // Update with actual URL
-		Schema: Schema{
-			Format:   "JSON",
-			Encoding: "UTF-8",
-			FileType: "text",
-		},
+func HandleQuotesImport(w http.ResponseWriter, r *http.Request) {
+	var payload quotes.GoogleSheetsLink
+	if err := parseRequestBody(r, &payload); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
+
+	spreadsheetID, err := extractSpreadsheetID(payload.GoogleSheetsLink)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Invalid Google Sheets link: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	service, err := getService()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to initialize Sheets service: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	quotes, err := ReadData(service, spreadsheetID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error reading data: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if err := processQuotesInBatches(quotes); err != nil {
+		http.Error(w, fmt.Sprintf("Error processing quotes: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// mechanism to update quotesMetadata.json
+	quotesJson, err := db.FetchAllQuotesFromDB()
+	if err != nil {
+		http.Error(w, "unable to fetch data from DB", http.StatusInternalServerError)
+	}
+
+	// send to quotesToJson
+	utils.QuotesToJson(quotesJson)
+
+	writeResponse(w, http.StatusOK, "Data imported successfully")
 }
 
-// WriteJSONToFile saves the quotes data to a JSON file
-func WriteJSONToFile(filename string, data Quotes) error {
-	jsonData, err := json.MarshalIndent(data, "", "  ")
+func processQuotesInBatches(quotes []Quote) error {
+	dbConn, err := db.ConnectToDB()
 	if err != nil {
-		return fmt.Errorf("error marshaling JSON: %w", err)
+		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	if err := os.WriteFile(filename, jsonData, 0644); err != nil {
-		return fmt.Errorf("error writing file: %w", err)
+	totalQuotes := len(quotes)
+	for i := 0; i < totalQuotes; i += batchSize {
+		end := i + batchSize
+		if end > totalQuotes {
+			end = totalQuotes
+		}
+		if err := processBatch(dbConn, quotes[i:end]); err != nil {
+			return fmt.Errorf("error processing batch %d-%d: %w", i, end, err)
+		}
 	}
-
 	return nil
 }
 
-// handles import of data in the form of excel of a google sheet
-func HandleQuotesImport(w http.ResponseWriter, r *http.Request) {
-	var v quotes.GoogleSheetsLink
+func processBatch(dbConn *gorm.DB, batch []Quote) error {
+	for _, quote := range batch {
+		if err := dbInsertQuote(dbConn, quote); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
-	// Read the body of the request
+func dbInsertQuote(dbConn *gorm.DB, quote Quote) error {
+	result := dbConn.Create(&quote)
+	if result.Error != nil {
+		return fmt.Errorf("failed to insert quote: %w", result.Error)
+	}
+	log.Printf("Inserted quote: %+v", quote)
+	return nil
+}
+
+func parseRequestBody(r *http.Request, v interface{}) error {
 	data, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "Unable to read request body", http.StatusInternalServerError)
+		return fmt.Errorf("failed to read request body: %w", err)
+	}
+	defer r.Body.Close()
+	if err := json.Unmarshal(data, v); err != nil {
+		return fmt.Errorf("failed to parse JSON: %w", err)
+	}
+	return nil
+}
+
+func HandleQuotesUpload(w http.ResponseWriter, r *http.Request) {
+	var quote Quote
+
+	data, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Unable to read JSON data", http.StatusInternalServerError)
 		return
 	}
 	defer r.Body.Close()
 
-	// Unmarshal the JSON data into the `url` struct
-	if err := json.Unmarshal(data, &v); err != nil {
-		http.Error(w, "Unable to unmarshal JSON data", http.StatusBadRequest)
+	if err := json.Unmarshal(data, &quote); err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
 		return
 	}
 
-	// Extract the spreadsheet ID from the Google Sheets link
-	spreadsheetID, err := extractSpreadsheetID(v.GoogleSheetsLink)
+	log.Printf("Received quote: %+v", quote)
+
+	// Write to database
+	dbConn, err := db.ConnectToDB()
 	if err != nil {
-		http.Error(w, "Invalid Google Sheets link", http.StatusBadRequest)
+		http.Error(w, "failed to connect to database: %w", 500)
 		return
 	}
 
-	fmt.Printf("Extracted Spreadsheet ID: %v\n", spreadsheetID)
-	// Create the Sheets service
-	service, err := getService()
+	dbInsertQuote(dbConn, quote)
+
+	// update the quotesMetadata.json file
+	quotes, err := db.FetchAllQuotesFromDB()
 	if err != nil {
-		log.Fatalf("Failed to create Sheets service: %v", err)
+		http.Error(w, "unable to fetch data from DB", http.StatusInternalServerError)
 	}
 
-	// Read data from the sheet
-	if err := ReadData(service, spreadsheetID); err != nil {
-		log.Fatalf("Failed to read data: %v", err)
-	}
+	// send to quotesToJson
+	utils.QuotesToJson(quotes)
 
-	// TODO: Implement logic to write to the database
-
-	// TODO: Implement logic to upload to the S3 bucket
-
-	// Respond with a success message (you may want to adjust this based on actual implementation)
+	// TODO: Upload to S3 bucket
 	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Quote uploaded successfully"))
 }
 
-// handles the upload of a single quote
-func HandleQuotesUpload(w http.ResponseWriter, r *http.Request) {
-	// create a quote object based on the input
-	var quote quotes.Quote
-
-	data, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "unable to read JSON data", http.StatusInternalServerError)
-		return
-	}
-	r.Body.Close()
-
-	if err := json.Unmarshal(data, &quote); err != nil {
-		http.Error(w, "unable to read JSON data", http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Printf("%+v", string(data))
-
-	// todo write to DB
-	// todo write in s3 bucket(local stack)
+func writeResponse(w http.ResponseWriter, statusCode int, message string) {
+	w.WriteHeader(statusCode)
+	w.Write([]byte(message))
 }
