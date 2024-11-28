@@ -234,7 +234,6 @@ func HandleQuotesUpload(w http.ResponseWriter, r *http.Request) {
 	// send to quotesToJson
 	utils.QuotesToJson(quotes)
 
-	// TODO: Upload to S3 bucket
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Quote uploaded successfully"))
 }

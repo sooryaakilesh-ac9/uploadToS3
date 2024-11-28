@@ -1,17 +1,21 @@
 package handler
 
 import (
+	"backend/ops/db"
 	"backend/pkg/images"
+	"backend/utils"
 	"fmt"
 	"image"
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
+
+	"gorm.io/gorm"
 )
 
 // handles import of data
@@ -22,6 +26,7 @@ func HandleImagesImport(w http.ResponseWriter, r *http.Request) {
 	// write in s3 bucket
 }
 
+// handles the upload of a single image
 // handles the upload of a single image
 func HandleImagesUpload(w http.ResponseWriter, r *http.Request) {
 	// Retrieve the file
@@ -59,14 +64,52 @@ func HandleImagesUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Print flyer metadata for debugging purposes
-	fmt.Printf("%+v", flyer)
+	// Write to database
+	dbConn, err := db.ConnectToDB()
+	if err != nil {
+		http.Error(w, "failed to connect to database: %w", 500)
+		return
+	}
 
-	// TODO: Persist flyer metadata to database
-	// saveFlyerToDatabase(flyer)
+	dbInsertImage(dbConn, flyer)
 
+	// Fetch image from the database
+	image, err := db.FetchImageFromDB(1)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to fetch image from DB: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Print image JSON (for debugging purposes)
+	fmt.Printf("image JSON => %v\n", image)
+
+	// Update the imagesMetadata.json file
+	images, err := db.FetchAllImagesFromDB()
+	if err != nil {
+		http.Error(w, "unable to fetch data from DB", http.StatusInternalServerError)
+	}
+
+	// send to quotesToJson
+	utils.ImagesToJson(images)
+
+	// Upload image to LocalStack S3 (New code)
+	if err := utils.UploadToS3LSImages(filePath, handler.Filename); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to upload image to S3: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Send success response
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "Image %s uploaded successfully\n", handler.Filename)
+}
+
+func dbInsertImage(dbConn *gorm.DB, flyer images.Flyer) error {
+	result := dbConn.Create(&flyer)
+	if result.Error != nil {
+		return fmt.Errorf("failed to insert quote: %w", result.Error)
+	}
+	log.Printf("Inserted image: %+v", flyer)
+	return nil
 }
 
 func convertToJson(filePath, filename string) (images.Flyer, error) {
@@ -107,7 +150,6 @@ func convertToJson(filePath, filename string) (images.Flyer, error) {
 
 	// Create Flyer object
 	flyer := images.Flyer{
-		Id: generateUniqueID(), // You'll need to implement this function
 		Design: images.Design{
 			TemplateId: "", // Add template ID logic if applicable
 			Resolution: images.Resolution{
@@ -116,7 +158,7 @@ func convertToJson(filePath, filename string) (images.Flyer, error) {
 				Unit:   1, // Assuming pixels
 			},
 			Type:        "image",
-			Tags:        extractImageTags(filename), // Implement tag extraction
+			Tags:        extractImageTags(filename),
 			FileFormat:  fileFormat,
 			Orientation: orientation,
 		},
@@ -125,11 +167,6 @@ func convertToJson(filePath, filename string) (images.Flyer, error) {
 	}
 
 	return flyer, nil
-}
-
-// Helper function to generate unique ID
-func generateUniqueID() string {
-	return fmt.Sprintf("flyer_%d", time.Now().UnixNano())
 }
 
 // Helper function to extract tags from filename

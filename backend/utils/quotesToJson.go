@@ -60,6 +60,8 @@ func QuotesToJson(quotes []quotes.Quote) error {
 		return fmt.Errorf("unable to write JSON data to file: %v", err)
 	}
 
+	UploadQuotesMetadataToS3LS("/Users/sooryaakilesh/Documents/contentService/backend/cmd/server/quotesMetadata.json", "quotesMetadata.json")
+
 	fmt.Println("JSON file 'quotesMetadata.json' has been created successfully.")
 	return nil
 }
