@@ -13,6 +13,24 @@ import (
 
 // todo implement unit test cases
 
+// var (
+// 	dbInstance *gorm.DB
+// 	once sync.Once
+// )
+
+// init db and the instance is reused
+// call to ConnectToDB and get the connection instance
+// func initDB() error {
+// 	return nil
+// }
+
+// func GetDB() (*gorm.DB, error) {
+// 	if dbInstance == nil {
+// 		return fmt.Errorf("database connection not initialized, call initDB() first")
+// 	}
+// 	return dbInstance, nil
+// }
+
 // connect to DB and returns an instance of the DB
 // ConnectToDB connects to the PostgreSQL database and ensures the necessary tables exist
 func ConnectToDB() (*gorm.DB, error) {
