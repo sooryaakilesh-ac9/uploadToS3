@@ -28,7 +28,7 @@ func UploadToS3LSImages(path string, fileName string) error {
 	svc := s3.New(sess)
 
 	// Define the S3 bucket name and folder path
-	bucketName := "my-local-bucket"
+	bucketName := os.Getenv("S3LS_BUCKET_NAME")
 	folderPath := "images/"
 
 	// Create S3 bucket (if it doesn't exist)
