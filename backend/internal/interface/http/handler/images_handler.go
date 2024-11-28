@@ -27,7 +27,6 @@ func HandleImagesImport(w http.ResponseWriter, r *http.Request) {
 }
 
 // handles the upload of a single image
-// handles the upload of a single image
 func HandleImagesUpload(w http.ResponseWriter, r *http.Request) {
 	// Retrieve the file
 	file, handler, err := r.FormFile("image")

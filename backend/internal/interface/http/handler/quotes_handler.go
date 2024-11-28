@@ -19,6 +19,8 @@ import (
 	"gorm.io/gorm"
 )
 
+// todo set env value for the following
+
 const (
 	credentialsFile = "/Users/sooryaakilesh/Downloads/contentservice-442500-a653dca5bcda.json"
 	batchSize       = 100
@@ -51,6 +53,7 @@ type Quotes struct {
 	Metadata QuotesMetadata `json:"metadata"`
 }
 
+// extract the sheet id from the google sheets link
 func extractSpreadsheetID(sheetLink string) (string, error) {
 	parsedURL, err := url.Parse(sheetLink)
 	if err != nil {
@@ -65,6 +68,7 @@ func extractSpreadsheetID(sheetLink string) (string, error) {
 	return "", fmt.Errorf("spreadsheet ID not found in URL")
 }
 
+// returns the service authenticated by the JSON file downloaded from google cloud console
 func getService() (*sheets.Service, error) {
 	ctx := context.Background()
 	if credentialsFile == "" {
@@ -73,6 +77,7 @@ func getService() (*sheets.Service, error) {
 	return sheets.NewService(ctx, option.WithCredentialsFile(credentialsFile))
 }
 
+// reads the data from google sheets
 func ReadData(service *sheets.Service, spreadsheetID string) ([]Quote, error) {
 	resp, err := service.Spreadsheets.Values.Get(spreadsheetID, readRange).Do()
 	if err != nil {
@@ -84,6 +89,7 @@ func ReadData(service *sheets.Service, spreadsheetID string) ([]Quote, error) {
 	return processRows(resp.Values), nil
 }
 
+// processing rows (batch processing)
 func processRows(rows [][]interface{}) []Quote {
 	quotes := make([]Quote, 0, len(rows)-1)
 	for i, row := range rows {
@@ -100,6 +106,7 @@ func processRows(rows [][]interface{}) []Quote {
 	return quotes
 }
 
+// gets all the tags present in the sheets
 func processTags(rawTags string) []string {
 	cleaned := strings.ReplaceAll(rawTags, " ", "")
 	if cleaned == "" {
@@ -108,6 +115,7 @@ func processTags(rawTags string) []string {
 	return strings.Split(cleaned, ",")
 }
 
+// todo get company account to create service account in google cloud console
 func HandleQuotesImport(w http.ResponseWriter, r *http.Request) {
 	var payload quotes.GoogleSheetsLink
 	if err := parseRequestBody(r, &payload); err != nil {
@@ -150,6 +158,7 @@ func HandleQuotesImport(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, http.StatusOK, "Data imported successfully")
 }
 
+// batch processing quotes
 func processQuotesInBatches(quotes []Quote) error {
 	dbConn, err := db.ConnectToDB()
 	if err != nil {
@@ -169,6 +178,7 @@ func processQuotesInBatches(quotes []Quote) error {
 	return nil
 }
 
+// process batches of quotes
 func processBatch(dbConn *gorm.DB, batch []Quote) error {
 	for _, quote := range batch {
 		if err := dbInsertQuote(dbConn, quote); err != nil {
@@ -178,6 +188,8 @@ func processBatch(dbConn *gorm.DB, batch []Quote) error {
 	return nil
 }
 
+// inserting into DB
+// todo add a common connection from DB
 func dbInsertQuote(dbConn *gorm.DB, quote Quote) error {
 	result := dbConn.Create(&quote)
 	if result.Error != nil {
@@ -199,6 +211,7 @@ func parseRequestBody(r *http.Request, v interface{}) error {
 	return nil
 }
 
+// handles a single quote upload
 func HandleQuotesUpload(w http.ResponseWriter, r *http.Request) {
 	var quote Quote
 
@@ -214,6 +227,7 @@ func HandleQuotesUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// logging to verify quoteJSON structure(not marhsalled)
 	log.Printf("Received quote: %+v", quote)
 
 	// Write to database
