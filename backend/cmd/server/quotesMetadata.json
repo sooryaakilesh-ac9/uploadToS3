@@ -1,6 +1,12 @@
 {
   "quotes": [
     {
+      "id": 10,
+      "text": "It is common to get angry at someone else’s mistakes. It needs a big heart to feel compassion and accommodate their wrong doings and to give them a chance to change.",
+      "tags": [],
+      "lang": "en-US"
+    },
+    {
       "id": 1,
       "text": "This new year, wish for the strength to be centred when faced with challenges and the willingness to serve. Remind yourself again and again that happiness is your nature. (Note: use a really nice pic)",
       "tags": [],
@@ -709,6 +715,12 @@
       "lang": "en-US"
     },
     {
+      "id": 316,
+      "text": "The state of our mind defines the quality of life.",
+      "tags": [],
+      "lang": "en-US"
+    },
+    {
       "id": 119,
       "text": "Why do your spirits go down? Usually it is because somebody said something stupid to you. And why? Because they had some garbage and they needed to throw it out. And you were there, ready to catch it.",
       "tags": [],
@@ -921,6 +933,12 @@
     {
       "id": 154,
       "text": "You pray for that which you cannot achieve with your efforts, skills \u0026 abilities.",
+      "tags": [],
+      "lang": "en-US"
+    },
+    {
+      "id": 317,
+      "text": "Obstacles are inevitable when you set out to do something big.",
       "tags": [],
       "lang": "en-US"
     },
@@ -1891,18 +1909,6 @@
       "lang": "en-US"
     },
     {
-      "id": 316,
-      "text": "The state of our mind defines the quality of life.",
-      "tags": [],
-      "lang": "en-US"
-    },
-    {
-      "id": 317,
-      "text": "Obstacles are inevitable when you set out to do something big.",
-      "tags": [],
-      "lang": "en-US"
-    },
-    {
       "id": 318,
       "text": "It’s not possible for all things to be perfect all the time. Even the best, the greatest of actions performed with the noblest intentions can have imperfections.",
       "tags": [],
@@ -2713,6 +2719,12 @@
       "lang": "en-US"
     },
     {
+      "id": 533,
+      "text": "When wisdom awakens, the path of life gets illuminated, abundance flows and harmony pervades.",
+      "tags": [],
+      "lang": "en-US"
+    },
+    {
       "id": 455,
       "text": "Half your problems are solved the moment you recognize there is a problem. The resolution of the remaining 50% depends on your determination!",
       "tags": [],
@@ -3181,12 +3193,6 @@
       "lang": "en-US"
     },
     {
-      "id": 533,
-      "text": "When wisdom awakens, the path of life gets illuminated, abundance flows and harmony pervades.",
-      "tags": [],
-      "lang": "en-US"
-    },
-    {
       "id": 534,
       "text": "In always wanting to be comfortable, you become lazy. In always wanting perfection, you become angry. In always wanting to be rich, you become greedy.",
       "tags": [],
@@ -3412,6 +3418,14 @@
       "id": 571,
       "text": "Tough workout you take on to build your muscles. Tough people you should put up with to make your mind and emotions, sharp and strong.",
       "tags": [],
+      "lang": "en-US"
+    },
+    {
+      "id": 613,
+      "text": "When attention is given to the spiritual aspect of one’s life, it brings a sense of belongingness, and responsibility, compassion and caring for the whole of humanity.",
+      "tags": [
+        "Attention"
+      ],
       "lang": "en-US"
     },
     {
@@ -3665,14 +3679,6 @@
       "tags": [
         "Attachment",
         "Surrender"
-      ],
-      "lang": "en-US"
-    },
-    {
-      "id": 613,
-      "text": "When attention is given to the spiritual aspect of one’s life, it brings a sense of belongingness, and responsibility, compassion and caring for the whole of humanity.",
-      "tags": [
-        "Attention"
       ],
       "lang": "en-US"
     },
@@ -4001,6 +4007,14 @@
       "text": "When you see the Divine in yourself, you will see the Divine in everyone",
       "tags": [
         "Divine"
+      ],
+      "lang": "en-US"
+    },
+    {
+      "id": 697,
+      "text": "Have faith in the Divine and you will evolve",
+      "tags": [
+        "Faith"
       ],
       "lang": "en-US"
     },
@@ -4351,14 +4365,6 @@
     {
       "id": 696,
       "text": "In faith you can transcend the laws of nature, but it needs to be pure",
-      "tags": [
-        "Faith"
-      ],
-      "lang": "en-US"
-    },
-    {
-      "id": 697,
-      "text": "Have faith in the Divine and you will evolve",
       "tags": [
         "Faith"
       ],
@@ -5349,6 +5355,14 @@
       "text": "The purpose of creation is to go from two to one. Two implies a sense of seperation; separation which is painful, hence love seeks to become one. The nature of love is to unite, to become one.",
       "tags": [
         "Love"
+      ],
+      "lang": "en-US"
+    },
+    {
+      "id": 942,
+      "text": "The food of spirituality is love, joy, compassion and beauty",
+      "tags": [
+        "Spirituality"
       ],
       "lang": "en-US"
     },
@@ -6374,14 +6388,6 @@
       "lang": "en-US"
     },
     {
-      "id": 942,
-      "text": "The food of spirituality is love, joy, compassion and beauty",
-      "tags": [
-        "Spirituality"
-      ],
-      "lang": "en-US"
-    },
-    {
       "id": 943,
       "text": "Spirituality is a harmonious blend of outer silence and inner celebration ; and also inner silence and outer celebration",
       "tags": [
@@ -6924,6 +6930,12 @@
       "lang": "en-US"
     },
     {
+      "id": 1061,
+      "text": "An argument has a purpose. It can bring out the truth if there is no emotion or sense of 'I' attached to it.",
+      "tags": [],
+      "lang": "en-US"
+    },
+    {
       "id": 1021,
       "text": "Renunciation is the ability to drop everything and rest. If you don’t renounce, you won’t be able to sleep. Insomnia is a sign of non-renunciation.",
       "tags": [],
@@ -7160,12 +7172,6 @@
     {
       "id": 1060,
       "text": "Love is the appetizer, seva is exercise; without love and seva, knowledge becomes indigestible.",
-      "tags": [],
-      "lang": "en-US"
-    },
-    {
-      "id": 1061,
-      "text": "An argument has a purpose. It can bring out the truth if there is no emotion or sense of 'I' attached to it.",
       "tags": [],
       "lang": "en-US"
     },
@@ -8292,15 +8298,14 @@
       "lang": "en-US"
     }
   ],
-  "metadata": {
+  "quotesMetadata": {
     "version": "1.0",
-    "lastUpdated": "2024-11-22T13:30:54+05:30",
-    "totalQuotes": 1240,
-    "url": "https://example.com/quotes",
+    "lastUpdated": "2024-11-28T10:00:41+05:30",
+    "totalQuotes": 1241,
     "schema": {
       "format": "JSON",
       "encoding": "UTF-8",
-      "fileType": "text"
+      "fileType": "application/json"
     }
   }
 }

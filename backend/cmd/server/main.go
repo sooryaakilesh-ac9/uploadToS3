@@ -3,7 +3,6 @@ package main
 import (
 	"backend/internal/interface/http/router"
 	"backend/ops/db"
-	"backend/utils"
 	"fmt"
 	"log"
 	"net/http"
@@ -22,17 +21,6 @@ func main() {
 	if err != nil {
 		log.Printf("%v", err)
 	}
-
-	// test fetching
-	quote, err := db.FetchQuoteFromDB(1)
-	if err != nil {
-		log.Print(err)
-	}
-	jsonQuote, err := utils.JsonHandler(quote)
-	if err != nil {
-		log.Print(err)
-	}
-	fmt.Println(string(jsonQuote))
 
 	log.Printf("Listening on PORT: %v...\n", PORT)
 	if err := http.ListenAndServe(fmt.Sprintf("localhost:%v", PORT), mux); err != nil {
