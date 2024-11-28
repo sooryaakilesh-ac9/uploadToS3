@@ -13,9 +13,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// todo add the haredcoded values to the ENV file
-// change every hardcoded file paths to relative paths
-
 func main() {
 	// Get the directory of the current file
 	_, currentFile, _, _ := runtime.Caller(0)

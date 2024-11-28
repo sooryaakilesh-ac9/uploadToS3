@@ -10,7 +10,7 @@ import (
 	_ "image/png"
 	"io"
 	"log"
-	"net/http"
+	"net/http" 
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,7 +18,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// handles import of data
+// handles import of data(google drive link or from folder)
 func HandleImagesImport(w http.ResponseWriter, r *http.Request) {
 	// todo implement batch processing
 
