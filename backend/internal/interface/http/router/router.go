@@ -23,6 +23,9 @@ func RegisterHandlers(mux *http.ServeMux) {
 
 	// pending (google drive or download and import?)
 	http.HandleFunc("/images/import", handler.HandleImagesImport)
+	mux.Handle("/images/import", middleware.ImagesImport(
+		http.HandlerFunc(handler.HandleImagesImport),
+	))
 	// http method is checked
 	// checks if the image is of valid type and is within the size limit
 	mux.Handle("/images", middleware.ImageAndMethodValidator(

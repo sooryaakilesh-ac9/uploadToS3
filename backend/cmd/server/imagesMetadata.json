@@ -1,7 +1,7 @@
 {
   "images": [
     {
-      "id": 1,
+      "id": 0,
       "design": {
         "templateId": "",
         "resolution": {
@@ -21,130 +21,30 @@
       "url": "images/Content_Service_Design.png"
     },
     {
-      "id": 2,
+      "id": 0,
       "design": {
         "templateId": "",
         "resolution": {
-          "width": 731,
-          "height": 1031,
+          "width": 761,
+          "height": 772,
           "unit": 1
         },
         "type": "image",
         "tags": [
-          "Content_Service_Design",
+          "Message_Sequence_Diagram",
           "png"
         ],
         "fileFormat": "PNG",
         "orientation": "portrait"
       },
       "lang": "en-US",
-      "url": "images/Content_Service_Design.png"
-    },
-    {
-      "id": 3,
-      "design": {
-        "templateId": "",
-        "resolution": {
-          "width": 731,
-          "height": 1031,
-          "unit": 1
-        },
-        "type": "image",
-        "tags": [
-          "Content_Service_Design",
-          "png"
-        ],
-        "fileFormat": "PNG",
-        "orientation": "portrait"
-      },
-      "lang": "en-US",
-      "url": "images/Content_Service_Design.png"
-    },
-    {
-      "id": 4,
-      "design": {
-        "templateId": "",
-        "resolution": {
-          "width": 731,
-          "height": 1031,
-          "unit": 1
-        },
-        "type": "image",
-        "tags": [
-          "Content_Service_Design",
-          "png"
-        ],
-        "fileFormat": "PNG",
-        "orientation": "portrait"
-      },
-      "lang": "en-US",
-      "url": "images/Content_Service_Design.png"
-    },
-    {
-      "id": 5,
-      "design": {
-        "templateId": "",
-        "resolution": {
-          "width": 731,
-          "height": 1031,
-          "unit": 1
-        },
-        "type": "image",
-        "tags": [
-          "Content_Service_Design",
-          "png"
-        ],
-        "fileFormat": "PNG",
-        "orientation": "portrait"
-      },
-      "lang": "en-US",
-      "url": "images/Content_Service_Design.png"
-    },
-    {
-      "id": 6,
-      "design": {
-        "templateId": "",
-        "resolution": {
-          "width": 731,
-          "height": 1031,
-          "unit": 1
-        },
-        "type": "image",
-        "tags": [
-          "Content_Service_Design",
-          "png"
-        ],
-        "fileFormat": "PNG",
-        "orientation": "portrait"
-      },
-      "lang": "en-US",
-      "url": "images/Content_Service_Design.png"
-    },
-    {
-      "id": 7,
-      "design": {
-        "templateId": "",
-        "resolution": {
-          "width": 731,
-          "height": 1031,
-          "unit": 1
-        },
-        "type": "image",
-        "tags": [
-          "Content_Service_Design",
-          "png"
-        ],
-        "fileFormat": "PNG",
-        "orientation": "portrait"
-      },
-      "lang": "en-US",
-      "url": "images/Content_Service_Design.png"
+      "url": "images/Message_Sequence_Diagram.png"
     }
   ],
   "metadata": {
     "version": "1.0",
-    "lastUpdated": "2024-11-29T09:37:17+05:30",
-    "totalFlyers": 7,
+    "lastUpdated": "2024-11-29T10:21:44+05:30",
+    "totalFlyers": 2,
     "url": "https://example.com/images",
     "schema": {
       "format": "JSON",

@@ -4,13 +4,14 @@ import (
 	"backend/ops/db"
 	"backend/pkg/images"
 	"backend/utils"
+	"encoding/json"
 	"fmt"
 	"image"
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
 	"log"
-	"net/http" 
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,12 +19,135 @@ import (
 	"gorm.io/gorm"
 )
 
-// handles import of data(google drive link or from folder)
+// handles import of data(from folder)
 func HandleImagesImport(w http.ResponseWriter, r *http.Request) {
-	// todo implement batch processing
+	// Specify the directory to import images from
+	importDir := "/Users/sooryaakilesh/Documents/contentService/designs"
 
-	// todo write to DB
-	// write in s3 bucket
+	// Validate import directory exists
+	if _, err := os.Stat(importDir); os.IsNotExist(err) {
+		http.Error(w, fmt.Sprintf("Import directory %s does not exist", importDir), http.StatusBadRequest)
+		return
+	}
+
+	// Create images directory if it doesn't exist
+	if _, err := os.Stat("images"); os.IsNotExist(err) {
+		if err := os.Mkdir("images", os.ModePerm); err != nil {
+			http.Error(w, "Failed to create images directory", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Connect to database
+	dbConn, err := db.GetDB()
+	if err != nil {
+		http.Error(w, "Failed to connect to database", http.StatusInternalServerError)
+		return
+	}
+
+	// Track import statistics
+	var successCount, failureCount int
+	var importedImages []images.Flyer
+
+	// Read directory contents
+	entries, err := os.ReadDir(importDir)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to read import directory: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Process each file in the import directory
+	for _, entry := range entries {
+		// Skip directories
+		if entry.IsDir() {
+			continue
+		}
+
+		// Check file extension
+		filename := entry.Name()
+		ext := strings.ToLower(filepath.Ext(filename))
+		if ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".gif" {
+			log.Printf("Skipping non-image file: %s", filename)
+			failureCount++
+			continue
+		}
+
+		// Construct full source and destination paths
+		sourcePath := filepath.Join(importDir, filename)
+		destPath := filepath.Join("images", filename)
+
+		// Copy file to images directory
+		sourceFile, err := os.Open(sourcePath)
+		if err != nil {
+			log.Printf("Failed to open source file %s: %v", sourcePath, err)
+			failureCount++
+			continue
+		}
+		defer sourceFile.Close()
+
+		destFile, err := os.Create(destPath)
+		if err != nil {
+			log.Printf("Failed to create destination file %s: %v", destPath, err)
+			failureCount++
+			continue
+		}
+		defer destFile.Close()
+
+		// Copy file contents
+		if _, err := io.Copy(destFile, sourceFile); err != nil {
+			log.Printf("Failed to copy file %s: %v", filename, err)
+			failureCount++
+			continue
+		}
+
+		// Convert to Flyer object
+		flyer, err := convertToJson(destPath, filename)
+		if err != nil {
+			log.Printf("Failed to convert %s to Flyer: %v", filename, err)
+			failureCount++
+			continue
+		}
+
+		// Insert into database
+		if err := dbInsertImage(dbConn, flyer); err != nil {
+			log.Printf("Failed to insert image %s into database: %v", filename, err)
+			failureCount++
+			continue
+		}
+
+		// Upload to S3
+		if err := utils.UploadToS3LSImages(destPath, filename); err != nil {
+			log.Printf("Failed to upload %s to S3: %v", filename, err)
+			failureCount++
+			continue
+		}
+
+		// Track successful import
+		successCount++
+		importedImages = append(importedImages, flyer)
+	}
+
+	// Update images metadata JSON
+	if err := utils.ImagesToJson(importedImages); err != nil {
+		log.Printf("Failed to update images metadata: %v", err)
+	}
+
+	// Prepare and send response
+	response := struct {
+		Message       string `json:"message"`
+		SuccessCount  int    `json:"success_count"`
+		FailureCount  int    `json:"failure_count"`
+		TotalAttempts int    `json:"total_attempts"`
+	}{
+		Message:       "Image import completed",
+		SuccessCount:  successCount,
+		FailureCount:  failureCount,
+		TotalAttempts: successCount + failureCount,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 }
 
 // handles the upload of a single image
@@ -66,11 +190,14 @@ func HandleImagesUpload(w http.ResponseWriter, r *http.Request) {
 	// Write to database
 	dbConn, err := db.GetDB()
 	if err != nil {
-		http.Error(w, "failed to connect to database: %w", http.StatusInternalServerError)
+		http.Error(w, "failed to connect to database", http.StatusInternalServerError)
 		return
 	}
 
-	dbInsertImage(dbConn, flyer)
+	if err := dbInsertImage(dbConn, flyer); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to insert image: %v", err), http.StatusInternalServerError)
+		return
+	}
 
 	// Fetch image from the database
 	image, err := db.FetchImageFromDB(1)
@@ -86,12 +213,16 @@ func HandleImagesUpload(w http.ResponseWriter, r *http.Request) {
 	images, err := db.FetchAllImagesFromDB()
 	if err != nil {
 		http.Error(w, "unable to fetch data from DB", http.StatusInternalServerError)
+		return
 	}
 
 	// send to quotesToJson
-	utils.ImagesToJson(images)
+	if err := utils.ImagesToJson(images); err != nil {
+		http.Error(w, "Failed to update images metadata", http.StatusInternalServerError)
+		return
+	}
 
-	// Upload image to LocalStack S3 (New code)
+	// Upload image to LocalStack S3
 	if err := utils.UploadToS3LSImages(filePath, handler.Filename); err != nil {
 		http.Error(w, fmt.Sprintf("Failed to upload image to S3: %v", err), http.StatusInternalServerError)
 		return
@@ -105,7 +236,7 @@ func HandleImagesUpload(w http.ResponseWriter, r *http.Request) {
 func dbInsertImage(dbConn *gorm.DB, flyer images.Flyer) error {
 	result := dbConn.Create(&flyer)
 	if result.Error != nil {
-		return fmt.Errorf("failed to insert quote: %w", result.Error)
+		return fmt.Errorf("failed to insert image: %w", result.Error)
 	}
 	log.Printf("Inserted image: %+v", flyer)
 	return nil

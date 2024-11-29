@@ -28,7 +28,6 @@ func main() {
 		PORT = "8080"
 		log.Printf("No PORT specified in .env, using default: %s", PORT)
 	}
-	fmt.Printf("%v", PORT)
 
 	mux := http.NewServeMux()
 	router.RegisterHandlers(mux)
