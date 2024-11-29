@@ -12,7 +12,7 @@ type Quotes struct {
 
 // Quote struct represents a quote and its attributes
 type Quote struct {
-	Id   int            `json:"id" gorm:"primaryKey"`
+	Id   int            `json:"id" gorm:"primaryKey;autoIncrement"`
 	Text string         `json:"text"`
 	Tags pq.StringArray `gorm:"type:text[];column:tags" json:"tags"` // Explicitly use pq.StringArray
 	Lang string         `json:"lang"`

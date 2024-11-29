@@ -97,7 +97,6 @@ func processRows(rows [][]interface{}) []Quote {
 			continue
 		}
 		quotes = append(quotes, Quote{
-			Id:   i,
 			Text: fmt.Sprintf("%v", row[1]),
 			Tags: processTags(fmt.Sprintf("%v", row[0])),
 			Lang: "en-US",
@@ -215,6 +214,7 @@ func parseRequestBody(r *http.Request, v interface{}) error {
 func HandleQuotesUpload(w http.ResponseWriter, r *http.Request) {
 	var quote Quote
 
+	// Read the request body
 	data, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Unable to read JSON data", http.StatusInternalServerError)
@@ -222,34 +222,46 @@ func HandleQuotesUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
+	// Unmarshal the JSON data into the Quote struct
 	if err := json.Unmarshal(data, &quote); err != nil {
 		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
 		return
 	}
 
-	// logging to verify quoteJSON structure(not marhsalled)
+	// Logging to verify the received quote
 	log.Printf("Received quote: %+v", quote)
+
+	// Remove the ID from the quote to prevent conflicts with auto-increment
+	quote.Id = 0 // Ensuring that the ID is zeroed out before insertion
 
 	// Write to database
 	dbConn, err := db.GetDB()
 	if err != nil {
-		http.Error(w, "failed to connect to database: %w", 500)
+		http.Error(w, fmt.Sprintf("failed to connect to database: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	dbInsertQuote(dbConn, quote)
+	// Insert the quote into the database
+	if err := dbInsertQuote(dbConn, quote); err != nil {
+		http.Error(w, fmt.Sprintf("failed to insert quote: %v", err), http.StatusInternalServerError)
+		return
+	}
 
-	// update the quotesMetadata.json file
+	// Update the quotes metadata (e.g., quotesMetadata.json) and respond
+	updateQuotesMetadataAndRespond(w)
+}
+
+// helper function to update metadata and send response
+func updateQuotesMetadataAndRespond(w http.ResponseWriter) {
 	quotes, err := db.FetchAllQuotesFromDB()
 	if err != nil {
 		http.Error(w, "unable to fetch data from DB", http.StatusInternalServerError)
+		return
 	}
 
-	// send to quotesToJson
+	// Send updated quotes to JSON
 	utils.QuotesToJson(quotes)
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Quote uploaded successfully"))
+	writeResponse(w, http.StatusOK, "Quote uploaded successfully")
 }
 
 func writeResponse(w http.ResponseWriter, statusCode int, message string) {

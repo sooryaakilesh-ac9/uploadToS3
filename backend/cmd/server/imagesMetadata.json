@@ -1,7 +1,7 @@
 {
   "images": [
     {
-      "id": 0,
+      "id": 10,
       "design": {
         "templateId": "",
         "resolution": {
@@ -21,7 +21,7 @@
       "url": "images/Content_Service_Design.png"
     },
     {
-      "id": 0,
+      "id": 11,
       "design": {
         "templateId": "",
         "resolution": {
@@ -39,12 +39,32 @@
       },
       "lang": "en-US",
       "url": "images/Message_Sequence_Diagram.png"
+    },
+    {
+      "id": 12,
+      "design": {
+        "templateId": "",
+        "resolution": {
+          "width": 731,
+          "height": 1031,
+          "unit": 1
+        },
+        "type": "image",
+        "tags": [
+          "Content_Service_Design",
+          "png"
+        ],
+        "fileFormat": "PNG",
+        "orientation": "portrait"
+      },
+      "lang": "en-US",
+      "url": "images/Content_Service_Design.png"
     }
   ],
   "metadata": {
     "version": "1.0",
-    "lastUpdated": "2024-11-29T10:21:44+05:30",
-    "totalFlyers": 2,
+    "lastUpdated": "2024-11-29T12:05:23+05:30",
+    "totalFlyers": 3,
     "url": "https://example.com/images",
     "schema": {
       "format": "JSON",
