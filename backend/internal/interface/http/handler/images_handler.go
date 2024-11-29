@@ -64,7 +64,7 @@ func HandleImagesUpload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Write to database
-	dbConn, err := db.ConnectToDB()
+	dbConn, err := db.GetDB()
 	if err != nil {
 		http.Error(w, "failed to connect to database: %w", http.StatusInternalServerError)
 		return

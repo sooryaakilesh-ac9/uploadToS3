@@ -160,7 +160,7 @@ func HandleQuotesImport(w http.ResponseWriter, r *http.Request) {
 
 // batch processing quotes
 func processQuotesInBatches(quotes []Quote) error {
-	dbConn, err := db.ConnectToDB()
+	dbConn, err := db.GetDB()
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
@@ -231,7 +231,7 @@ func HandleQuotesUpload(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Received quote: %+v", quote)
 
 	// Write to database
-	dbConn, err := db.ConnectToDB()
+	dbConn, err := db.GetDB()
 	if err != nil {
 		http.Error(w, "failed to connect to database: %w", 500)
 		return

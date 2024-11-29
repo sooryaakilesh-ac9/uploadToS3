@@ -33,12 +33,8 @@ func main() {
 	mux := http.NewServeMux()
 	router.RegisterHandlers(mux)
 
-	// todo make a call to ConnectToDB
 	// todo make a call to initDB
-
-	// test connection ping
-	_, err := db.ConnectToDB()
-	if err != nil {
+	if err := db.InitDB(); err != nil {
 		log.Printf("%v", err)
 	}
 

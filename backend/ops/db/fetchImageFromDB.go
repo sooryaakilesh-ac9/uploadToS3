@@ -10,9 +10,9 @@ import (
 
 func FetchImageFromDB(imageId uint) (*images.Flyer, error) {
 	// Connect to the database
-	db, err := ConnectToDB()
+	db, err := GetDB()
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to DB: %w", err)
+		return nil, err
 	}
 
 	// Declare a variable to hold the fetched image
@@ -37,9 +37,9 @@ func FetchAllImagesFromDB() ([]images.Flyer, error) {
 	var images []images.Flyer
 
 	// Connect to the database
-	db, err := ConnectToDB()
+	db, err := GetDB()
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to DB: %w", err)
+		return nil, err
 	}
 
 	// Fetch all quotes

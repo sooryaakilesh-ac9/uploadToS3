@@ -8,7 +8,7 @@ import (
 
 func InsertQuoteToDB(quote quotes.Quote) error {
 	// Connect to the database
-	db, err := ConnectToDB()
+	db, err := GetDB()
 	if err != nil {
 		return fmt.Errorf("failed to connect to DB: %w", err)
 	}

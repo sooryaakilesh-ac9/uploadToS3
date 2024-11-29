@@ -16,7 +16,7 @@ import (
 // FetchQuoteFromDB fetches a quote by its ID from the database
 func FetchQuoteFromDB(quoteId int) (*quotes.Quote, error) {
 	// Connect to the database
-	db, err := ConnectToDB()
+	db, err := GetDB()
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to DB: %w", err)
 	}
@@ -43,7 +43,7 @@ func FetchAllQuotesFromDB() ([]quotes.Quote, error) {
 	var quotes []quotes.Quote
 
 	// Connect to the database
-	db, err := ConnectToDB()
+	db, err := GetDB()
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to DB: %w", err)
 	}
