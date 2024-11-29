@@ -29,7 +29,7 @@ func UploadToS3LSImages(path string, fileName string) error {
 
 	// Define the S3 bucket name and folder path
 	bucketName := os.Getenv("S3LS_BUCKET_NAME")
-	folderPath := "images/"
+	folderPath := os.Getenv("S3LS_IMAGES_DIR_PATH")
 
 	// Create S3 bucket (if it doesn't exist)
 	_, err = svc.CreateBucket(&s3.CreateBucketInput{
@@ -85,7 +85,7 @@ func UploadQuotesMetadataToS3LS(path string, fileName string) error {
 
 	// Define the S3 bucket name and folder path
 	bucketName := os.Getenv("S3LS_BUCKET_NAME")
-	folderPath := "quotes/"
+	folderPath := os.Getenv("S3LS_QUOTES_DIR_PATH")
 
 	// Create S3 bucket (if it doesn't exist)
 	_, err = svc.CreateBucket(&s3.CreateBucketInput{
@@ -141,7 +141,7 @@ func UploadImagesMetadataToS3LS(path string, fileName string) error {
 
 	// Define the S3 bucket name and folder path
 	bucketName := os.Getenv("S3LS_BUCKET_NAME")
-	folderPath := "images/"
+	folderPath := os.Getenv("S3LS_IMAGES_DIR_PATH")
 
 	// Create S3 bucket (if it doesn't exist)
 	_, err = svc.CreateBucket(&s3.CreateBucketInput{
