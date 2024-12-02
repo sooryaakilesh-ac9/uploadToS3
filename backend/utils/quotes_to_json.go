@@ -62,7 +62,7 @@ func QuotesToJson(quotes []quotes.Quote) error {
 
 	metadataPath := os.Getenv("QUOTE_METADATA_PATH")
 	metadataFileName := os.Getenv("QUOTE_METADATA_FILENAME")
-	UploadQuotesMetadataToS3LS(metadataPath, metadataFileName)
+	UploadQuotesMetadataToS3(metadataPath, metadataFileName)
 
 	fmt.Println("JSON file 'quotesMetadata.json' has been created successfully.")
 	return nil

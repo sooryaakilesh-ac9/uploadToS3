@@ -121,7 +121,7 @@ func (h *ImageHandler) processImageFile(importDir, filename string) error {
 		return fmt.Errorf("failed to insert into db: %w", err)
 	}
 
-	if err := utils.UploadToS3LSImages(sourcePath, filename+fmt.Sprintf("_%v", id)); err != nil {
+	if err := utils.UploadToS3Images(sourcePath, filename+fmt.Sprintf("_%v", id)); err != nil {
 		return fmt.Errorf("failed to upload to S3: %w", err)
 	}
 
@@ -202,7 +202,7 @@ func (h *ImageHandler) HandleImagesUpload(w http.ResponseWriter, r *http.Request
 	}
 
 	// Upload image to LocalStack S3
-	if err := utils.UploadToS3LSImages(filePath, handler.Filename+fmt.Sprintf("_%v", id)); err != nil {
+	if err := utils.UploadToS3Images(filePath, handler.Filename+fmt.Sprintf("_%v", id)); err != nil {
 		log.Printf("Error uploading to S3: %v", err)
 		http.Error(w, fmt.Sprintf("Failed to upload image to S3: %v", err), http.StatusInternalServerError)
 		return

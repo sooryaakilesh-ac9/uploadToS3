@@ -88,7 +88,7 @@ func ImagesToJson(images []images.Flyer) error {
 
 	metadataPath := os.Getenv("IMAGE_METADATA_PATH")
 	metadataFileName := "/" + os.Getenv("IMAGE_METADATA_FILENAME")
-	UploadImagesMetadataToS3LS(metadataPath, metadataFileName)
+	UploadImagesMetadataToS3(metadataPath, metadataFileName)
 
 	fmt.Printf("JSON file %v has been created successfully.\n", metadataFileName)
 	return nil
