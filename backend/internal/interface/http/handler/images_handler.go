@@ -68,6 +68,29 @@ func (h *ImageHandler) HandleImagesImport(w http.ResponseWriter, r *http.Request
 		successCount++
 	}
 
+	// Update the imagesMetadata.json file
+	dbConn, err := h.db.GetConnection()
+	if err != nil {
+		log.Printf("Error getting DB connection: %v", err)
+		http.Error(w, "unable to connect to DB", http.StatusInternalServerError)
+		return
+	}
+
+	var images []images.Flyer
+	result := dbConn.Find(&images)
+	if result.Error != nil {
+		log.Printf("Error fetching images from DB: %v", result.Error)
+		http.Error(w, "unable to fetch data from DB", http.StatusInternalServerError)
+		return
+	}
+
+	// send to ImagesToJson
+	if err := utils.ImagesToJson(images); err != nil {
+		log.Printf("Error creating images metadata JSON: %v", err)
+		http.Error(w, "Failed to update images metadata", http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"success_count": successCount,
@@ -156,9 +179,17 @@ func (h *ImageHandler) HandleImagesUpload(w http.ResponseWriter, r *http.Request
 	}
 
 	// Update the imagesMetadata.json file
-	images, err := db.FetchAllImagesFromDB()
+	dbConn, err = h.db.GetConnection()
 	if err != nil {
-		log.Printf("Error fetching images from DB: %v", err)
+		log.Printf("Error getting DB connection: %v", err)
+		http.Error(w, "unable to connect to DB", http.StatusInternalServerError)
+		return
+	}
+
+	var images []images.Flyer
+	result := dbConn.Find(&images)
+	if result.Error != nil {
+		log.Printf("Error fetching images from DB: %v", result.Error)
 		http.Error(w, "unable to fetch data from DB", http.StatusInternalServerError)
 		return
 	}
