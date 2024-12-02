@@ -91,6 +91,21 @@ func (h *ImageHandler) HandleImagesImport(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// Check if imagesMetadata.json was created successfully
+	metadataFilePath := "./cmd/server/imagesMetadata.json" // Update this path as necessary
+	if _, err := os.Stat(metadataFilePath); os.IsNotExist(err) {
+		log.Printf("imagesMetadata.json does not exist at path: %s", metadataFilePath)
+		http.Error(w, "imagesMetadata.json not found", http.StatusInternalServerError)
+		return
+	}
+
+	// Upload imagesMetadata.json to S3
+	if err := utils.UploadImagesMetadataToS3(metadataFilePath, "imagesMetadata.json"); err != nil {
+		log.Printf("Error uploading imagesMetadata.json to S3: %v", err)
+		http.Error(w, "unable to update imagesMetadata to S3 bucket", http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"success_count": successCount,
@@ -201,10 +216,40 @@ func (h *ImageHandler) HandleImagesUpload(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// Check if imagesMetadata.json was created successfully
+	metadataFilePath := "./cmd/server/imagesMetadata.json" // Update this path as necessary
+	if _, err := os.Stat(metadataFilePath); os.IsNotExist(err) {
+		log.Printf("imagesMetadata.json does not exist at path: %s", metadataFilePath)
+		http.Error(w, "imagesMetadata.json not found", http.StatusInternalServerError)
+		return
+	}
+
+	// Upload imagesMetadata.json to S3
+	if err := utils.UploadImagesMetadataToS3(metadataFilePath, "imagesMetadata.json"); err != nil {
+		log.Printf("Error uploading imagesMetadata.json to S3: %v", err)
+		http.Error(w, "unable to update imagesMetadata to S3 bucket", http.StatusInternalServerError)
+		return
+	}
+
 	// Upload image to LocalStack S3
 	if err := utils.UploadToS3Images(filePath, handler.Filename+fmt.Sprintf("_%v", id)); err != nil {
 		log.Printf("Error uploading to S3: %v", err)
 		http.Error(w, fmt.Sprintf("Failed to upload image to S3: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// todo save imagesMetadata.json in s3
+	metadataFilePath = "./cmd/server/imagesMetadata.json" // Update this path as necessary
+	if _, err := os.Stat(metadataFilePath); os.IsNotExist(err) {
+		log.Printf("imagesMetadata.json does not exist at path: %s", metadataFilePath)
+		http.Error(w, "imagesMetadata.json not found", http.StatusInternalServerError)
+		return
+	}
+
+	// Upload imagesMetadata.json to S3
+	if err := utils.UploadImagesMetadataToS3(metadataFilePath, "imagesMetadata.json"); err != nil {
+		log.Printf("Error uploading imagesMetadata.json to S3: %v", err)
+		http.Error(w, "unable to update imagesMetadata to S3 bucket", http.StatusInternalServerError)
 		return
 	}
 

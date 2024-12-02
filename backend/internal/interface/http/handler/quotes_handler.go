@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/lib/pq"
@@ -165,6 +166,20 @@ func HandleQuotesImport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	metadataFilePath := "./cmd/server/quotesMetadata.json" // Update this path as necessary
+	if _, err := os.Stat(metadataFilePath); os.IsNotExist(err) {
+		log.Printf("quotesMetadata.json does not exist at path: %s", metadataFilePath)
+		http.Error(w, "quotesMetadata.json not found", http.StatusInternalServerError)
+		return
+	}
+
+	// Upload imagesMetadata.json to S3
+	if err := utils.UploadQuotesMetadataToS3(metadataFilePath, "quotesMetadata.json"); err != nil {
+		log.Printf("Error uploading quotesMetadata.json to S3: %v", err)
+		http.Error(w, "unable to update quotesMetadata to S3 bucket", http.StatusInternalServerError)
+		return
+	}
+
 	writeResponse(w, http.StatusOK, "Data imported successfully")
 }
 
@@ -270,6 +285,20 @@ func updateQuotesMetadataAndRespond(w http.ResponseWriter) {
 	if err := utils.QuotesToJson(quotes); err != nil {
 		log.Printf("Error creating quotes metadata JSON: %v", err)
 		http.Error(w, "Failed to update quotes metadata", http.StatusInternalServerError)
+		return
+	}
+
+	metadataFilePath := "./cmd/server/quotesMetadata.json" // Update this path as necessary
+	if _, err := os.Stat(metadataFilePath); os.IsNotExist(err) {
+		log.Printf("quotesMetadata.json does not exist at path: %s", metadataFilePath)
+		http.Error(w, "quotesMetadata.json not found", http.StatusInternalServerError)
+		return
+	}
+
+	// Upload imagesMetadata.json to S3
+	if err := utils.UploadQuotesMetadataToS3(metadataFilePath, "quotesMetadata.json"); err != nil {
+		log.Printf("Error uploading quotesMetadata.json to S3: %v", err)
+		http.Error(w, "unable to update quotesMetadata to S3 bucket", http.StatusInternalServerError)
 		return
 	}
 
