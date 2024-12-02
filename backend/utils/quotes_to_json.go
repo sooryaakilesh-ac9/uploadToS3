@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -27,6 +28,23 @@ type Schema struct {
 }
 
 func QuotesToJson(quotes []quotes.Quote) error {
+	metadataPath := os.Getenv("QUOTE_METADATA_PATH")
+	metadataFileName := os.Getenv("QUOTE_METADATA_FILENAME")
+
+	// Ensure the directory exists
+	if err := os.MkdirAll(metadataPath, os.ModePerm); err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	// Write JSON data to a file
+	filePath := filepath.Join(metadataPath, metadataFileName)
+	file, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("unable to create JSON file at %s: %v", filePath, err)
+	}
+	defer file.Close()
+
+	// Prepare metadata
 	metadata := QuotesMetadata{
 		Version:     "1.0",
 		LastUpdated: time.Now().Format(time.RFC3339),
@@ -48,20 +66,11 @@ func QuotesToJson(quotes []quotes.Quote) error {
 		return fmt.Errorf("unable to convert quotes to JSON: %v", err)
 	}
 
-	// Write JSON data to a file
-	file, err := os.Create("quotesMetadata.json")
-	if err != nil {
-		return fmt.Errorf("unable to create JSON file: %v", err)
-	}
-	defer file.Close()
-
 	_, err = file.Write(quoteJson)
 	if err != nil {
 		return fmt.Errorf("unable to write JSON data to file: %v", err)
 	}
 
-	metadataPath := os.Getenv("QUOTE_METADATA_PATH")
-	metadataFileName := os.Getenv("QUOTE_METADATA_FILENAME")
 	UploadQuotesMetadataToS3(metadataPath, metadataFileName)
 
 	fmt.Println("JSON file 'quotesMetadata.json' has been created successfully.")

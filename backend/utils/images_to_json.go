@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -44,12 +45,20 @@ type FlyersMetadata struct {
 }
 
 type MetaDataImages struct {
-	Images         []images.Flyer    `json:"images"`
-	ImagesMetadata FlyersMetadata    `json:"metadata"`
+	Images         []images.Flyer `json:"images"`
+	ImagesMetadata FlyersMetadata `json:"metadata"`
 }
 
 // ImagesToJson converts the flyer images to a JSON file with metadata
 func ImagesToJson(images []images.Flyer) error {
+	metadataPath := os.Getenv("IMAGE_METADATA_PATH")
+	metadataFileName := os.Getenv("IMAGE_METADATA_FILENAME")
+
+	// Ensure the directory exists
+	if err := os.MkdirAll(metadataPath, os.ModePerm); err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+
 	metadata := FlyersMetadata{
 		Version:     "1.0",
 		LastUpdated: time.Now().Format(time.RFC3339),
@@ -74,7 +83,8 @@ func ImagesToJson(images []images.Flyer) error {
 	}
 
 	// Create the JSON file to store the result
-	file, err := os.Create(os.Getenv("IMAGE_METADATA_FILENAME"))
+	filePath := filepath.Join(metadataPath, metadataFileName)
+	file, err := os.Create(filePath)
 	if err != nil {
 		return fmt.Errorf("unable to create JSON file: %v", err)
 	}
@@ -86,8 +96,6 @@ func ImagesToJson(images []images.Flyer) error {
 		return fmt.Errorf("unable to write JSON data to file: %v", err)
 	}
 
-	metadataPath := os.Getenv("IMAGE_METADATA_PATH")
-	metadataFileName := "/" + os.Getenv("IMAGE_METADATA_FILENAME")
 	UploadImagesMetadataToS3(metadataPath, metadataFileName)
 
 	fmt.Printf("JSON file %v has been created successfully.\n", metadataFileName)
