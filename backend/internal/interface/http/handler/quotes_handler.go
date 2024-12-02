@@ -118,29 +118,34 @@ func processTags(rawTags string) []string {
 func HandleQuotesImport(w http.ResponseWriter, r *http.Request) {
 	var payload quotes.GoogleSheetsLink
 	if err := parseRequestBody(r, &payload); err != nil {
+		log.Printf("Error parsing request body: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	spreadsheetID, err := extractSpreadsheetID(payload.GoogleSheetsLink)
 	if err != nil {
+		log.Printf("Error extracting spreadsheet ID: %v", err)
 		http.Error(w, fmt.Sprintf("Invalid Google Sheets link: %v", err), http.StatusBadRequest)
 		return
 	}
 
 	service, err := getService()
 	if err != nil {
+		log.Printf("Error initializing Sheets service: %v", err)
 		http.Error(w, fmt.Sprintf("Failed to initialize Sheets service: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	quotes, err := ReadData(service, spreadsheetID)
 	if err != nil {
+		log.Printf("Error reading data from sheets: %v", err)
 		http.Error(w, fmt.Sprintf("Error reading data: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	if err := processQuotesInBatches(quotes); err != nil {
+		log.Printf("Error processing quotes: %v", err)
 		http.Error(w, fmt.Sprintf("Error processing quotes: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -148,11 +153,17 @@ func HandleQuotesImport(w http.ResponseWriter, r *http.Request) {
 	// mechanism to update quotesMetadata.json
 	quotesJson, err := db.FetchAllQuotesFromDB()
 	if err != nil {
+		log.Printf("Error fetching quotes from DB: %v", err)
 		http.Error(w, "unable to fetch data from DB", http.StatusInternalServerError)
+		return
 	}
 
 	// send to quotesToJson
-	utils.QuotesToJson(quotesJson)
+	if err := utils.QuotesToJson(quotesJson); err != nil {
+		log.Printf("Error creating quotes metadata JSON: %v", err)
+		http.Error(w, "Failed to update quotes metadata", http.StatusInternalServerError)
+		return
+	}
 
 	writeResponse(w, http.StatusOK, "Data imported successfully")
 }
@@ -214,40 +225,36 @@ func parseRequestBody(r *http.Request, v interface{}) error {
 func HandleQuotesUpload(w http.ResponseWriter, r *http.Request) {
 	var quote Quote
 
-	// Read the request body
 	data, err := io.ReadAll(r.Body)
 	if err != nil {
+		log.Printf("Error reading request body: %v", err)
 		http.Error(w, "Unable to read JSON data", http.StatusInternalServerError)
 		return
 	}
 	defer r.Body.Close()
 
-	// Unmarshal the JSON data into the Quote struct
 	if err := json.Unmarshal(data, &quote); err != nil {
+		log.Printf("Error unmarshaling JSON: %v", err)
 		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
 		return
 	}
 
-	// Logging to verify the received quote
 	log.Printf("Received quote: %+v", quote)
-
-	// Remove the ID from the quote to prevent conflicts with auto-increment
 	quote.Id = 0 // Ensuring that the ID is zeroed out before insertion
 
-	// Write to database
 	dbConn, err := db.GetDB()
 	if err != nil {
+		log.Printf("Error connecting to database: %v", err)
 		http.Error(w, fmt.Sprintf("failed to connect to database: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// Insert the quote into the database
 	if err := dbInsertQuote(dbConn, quote); err != nil {
+		log.Printf("Error inserting quote to DB: %v", err)
 		http.Error(w, fmt.Sprintf("failed to insert quote: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// Update the quotes metadata (e.g., quotesMetadata.json) and respond
 	updateQuotesMetadataAndRespond(w)
 }
 
@@ -255,12 +262,17 @@ func HandleQuotesUpload(w http.ResponseWriter, r *http.Request) {
 func updateQuotesMetadataAndRespond(w http.ResponseWriter) {
 	quotes, err := db.FetchAllQuotesFromDB()
 	if err != nil {
+		log.Printf("Error fetching quotes from DB: %v", err)
 		http.Error(w, "unable to fetch data from DB", http.StatusInternalServerError)
 		return
 	}
 
-	// Send updated quotes to JSON
-	utils.QuotesToJson(quotes)
+	if err := utils.QuotesToJson(quotes); err != nil {
+		log.Printf("Error creating quotes metadata JSON: %v", err)
+		http.Error(w, "Failed to update quotes metadata", http.StatusInternalServerError)
+		return
+	}
+
 	writeResponse(w, http.StatusOK, "Quote uploaded successfully")
 }
 

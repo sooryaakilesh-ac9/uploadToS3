@@ -8,7 +8,7 @@ info:
     email: soorya@abovecloud9.ai
 
 servers:
-  - url: /api/v1/admin/content
+  - url: /v1/admin/content
 
 paths:
   /quotes/import:

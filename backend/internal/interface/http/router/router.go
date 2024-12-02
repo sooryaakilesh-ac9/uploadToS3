@@ -3,11 +3,20 @@ package router
 import (
 	"backend/internal/interface/http/handler"
 	"backend/internal/interface/http/middleware"
+	"backend/ops/db"
+	"log"
 	"net/http"
 )
 
 // register handlers
 func RegisterHandlers(mux *http.ServeMux) {
+	// Initialize handlers
+	database := db.NewPostgresDB()
+	if err := database.Connect(); err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	imageHandler := handler.NewImageHandler(database)
+
 	// handlers regarding quotes
 	// http.HandleFunc("/quotes/import", handler.HandleQuotesImport)
 	mux.Handle("/quotes/import", middleware.CheckQuotesLink(
@@ -22,13 +31,12 @@ func RegisterHandlers(mux *http.ServeMux) {
 	// handlers regarding images
 
 	// pending (google drive or download and import?)
-	http.HandleFunc("/images/import", handler.HandleImagesImport)
 	mux.Handle("/images/import", middleware.ImagesImport(
-		http.HandlerFunc(handler.HandleImagesImport),
+		http.HandlerFunc(imageHandler.HandleImagesImport),
 	))
 	// http method is checked
 	// checks if the image is of valid type and is within the size limit
 	mux.Handle("/images", middleware.ImageAndMethodValidator(
-		http.HandlerFunc(handler.HandleImagesUpload),
+		http.HandlerFunc(imageHandler.HandleImagesUpload),
 	))
 }
