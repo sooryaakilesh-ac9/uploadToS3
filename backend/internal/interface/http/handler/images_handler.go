@@ -76,8 +76,8 @@ func (h *ImageHandler) HandleImagesImport(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	var images []images.Flyer
-	result := dbConn.Find(&images)
+	var imagesList []images.Flyer
+	result := dbConn.Find(&imagesList)
 	if result.Error != nil {
 		log.Printf("Error fetching images from DB: %v", result.Error)
 		http.Error(w, "unable to fetch data from DB", http.StatusInternalServerError)
@@ -85,7 +85,8 @@ func (h *ImageHandler) HandleImagesImport(w http.ResponseWriter, r *http.Request
 	}
 
 	// Generate images metadata JSON
-	if err := utils.ImagesToJson(images); err != nil {
+	flyers := images.Flyers{Flyers: imagesList} // Wrap the images in Flyers
+	if err := utils.ImagesToJson(flyers); err != nil {
 		log.Printf("Error creating images metadata JSON: %v", err)
 		http.Error(w, "Failed to update images metadata", http.StatusInternalServerError)
 		return
@@ -132,12 +133,12 @@ func (h *ImageHandler) processImageFile(importDir, filename string) error {
 	}
 
 	// Update the URL to include the S3 path and ID
-	flyer.Url = fmt.Sprintf("%s/%s_%d", os.Getenv("S3_BUCKET_NAME"), filename, id)
+	flyer.Url = fmt.Sprintf("%s/%d_%s", os.Getenv("S3_BUCKET_NAME"), id, filename)
 	if err := dbConn.Save(&flyer).Error; err != nil {
 		return fmt.Errorf("failed to update flyer URL in db: %w", err)
 	}
 
-	if err := utils.UploadToS3Images(sourcePath, fmt.Sprintf("%s_%d", filename, id)); err != nil {
+	if err := utils.UploadToS3Images(sourcePath, fmt.Sprintf("%d_%s", id, filename)); err != nil {
 		return fmt.Errorf("failed to upload to S3: %w", err)
 	}
 
@@ -194,6 +195,7 @@ func convertToJson(filePath, filename string) (images.Flyer, error) {
 			Tags:        extractImageTags(filename),
 			FileFormat:  fileFormat,
 			Orientation: orientation,
+			FileName: filename,
 		},
 		Lang: "en-US",
 		Url:  fmt.Sprintf("%s/%s", S3BUCKET_NAME, filename), // Temporary URL before DB ID is added
@@ -258,7 +260,7 @@ func (h *ImageHandler) HandleImagesUpload(w http.ResponseWriter, r *http.Request
 	}
 
 	// Update the URL to include the ID
-	flyer.Url = fmt.Sprintf("%s/%s_%d", os.Getenv("S3_BUCKET_NAME"), handler.Filename, id)
+	flyer.Url = fmt.Sprintf("%s/%d_%s", os.Getenv("S3_BUCKET_NAME"), id, handler.Filename)
 
 	// Update the flyer in the database with the new URL
 	if err := dbConn.Save(&flyer).Error; err != nil {
@@ -266,8 +268,8 @@ func (h *ImageHandler) HandleImagesUpload(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	var images []images.Flyer
-	result := dbConn.Find(&images)
+	var imagesList []images.Flyer
+	result := dbConn.Find(&imagesList)
 	if result.Error != nil {
 		log.Printf("Error fetching images from DB: %v", result.Error)
 		http.Error(w, "unable to fetch data from DB", http.StatusInternalServerError)
@@ -275,7 +277,8 @@ func (h *ImageHandler) HandleImagesUpload(w http.ResponseWriter, r *http.Request
 	}
 
 	// Generate images metadata JSON
-	if err := utils.ImagesToJson(images); err != nil {
+	flyers := images.Flyers{Flyers: imagesList} // Wrap the images in Flyers
+	if err := utils.ImagesToJson(flyers); err != nil {
 		log.Printf("Error creating images metadata JSON: %v", err)
 		http.Error(w, "Failed to update images metadata", http.StatusInternalServerError)
 		return
@@ -291,7 +294,7 @@ func (h *ImageHandler) HandleImagesUpload(w http.ResponseWriter, r *http.Request
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message": "Image uploaded successfully",
+		"message":  "Image uploaded successfully",
 		"filename": handler.Filename,
 	})
 }

@@ -28,6 +28,7 @@ type Design struct {
 	Tags        []string   `json:"tags" gorm:"serializer:json"`
 	FileFormat  string     `json:"fileFormat" gorm:"column:file_format"`
 	Orientation string     `json:"orientation"`
+	FileName    string     `json:"fileName"`
 }
 
 type Resolution struct {
@@ -37,11 +38,10 @@ type Resolution struct {
 }
 
 type FlyersMetadata struct {
-	Version     string `json:"version"`
 	LastUpdated string `json:"lastUpdated"`
-	TotalFlyers int    `json:"totalFlyers"`
+	TotalFlyers int    `json:"total"`
 	Url         string `json:"url"`
-	Schema      Schema `json:"schema"`
+	Version     uint   `json:"version"`
 }
 
 type MetaDataImages struct {
@@ -50,7 +50,7 @@ type MetaDataImages struct {
 }
 
 // ImagesToJson converts the flyer images to a JSON file with metadata
-func ImagesToJson(images []images.Flyer) error {
+func ImagesToJson(images images.Flyers) error {
 	metadataPath := os.Getenv("IMAGE_METADATA_PATH")
 	metadataFileName := os.Getenv("IMAGE_METADATA_FILENAME")
 
@@ -60,19 +60,14 @@ func ImagesToJson(images []images.Flyer) error {
 	}
 
 	metadata := FlyersMetadata{
-		Version:     "1.0",
+		Version:     1,
 		LastUpdated: time.Now().Format(time.RFC3339),
-		TotalFlyers: len(images),
+		TotalFlyers: len(images.Flyers),
 		Url:         os.Getenv("IMAGE_METADATA_URL"), // Replace with actual URL or dynamic generation
-		Schema: Schema{
-			Format:   "JSON",
-			Encoding: "UTF-8",
-			FileType: "application/json",
-		},
 	}
 
 	imageData := MetaDataImages{
-		Images:         images,
+		Images:         images.Flyers,
 		ImagesMetadata: metadata,
 	}
 
