@@ -11,20 +11,14 @@ import (
 
 type MetaDataQuotes struct {
 	Quotes         []quotes.Quote `json:"quotes"`
-	QuotesMetadata QuotesMetadata `json:"quotesMetadata"`
+	QuotesMetadata QuotesMetadata `json:"metadata"`
 }
 
 type QuotesMetadata struct {
-	Version     string `json:"version"`
 	LastUpdated string `json:"lastUpdated"`
-	TotalQuotes int    `json:"totalQuotes"`
-	Schema      Schema `json:"schema"`
-}
-
-type Schema struct {
-	Format   string `json:"format"`
-	Encoding string `json:"encoding"`
-	FileType string `json:"fileType"`
+	TotalQuotes int    `json:"total"`
+	Url         string `json:"url"`
+	Version     uint   `json:"version"`
 }
 
 func QuotesToJson(quotes []quotes.Quote) error {
@@ -46,14 +40,10 @@ func QuotesToJson(quotes []quotes.Quote) error {
 
 	// Prepare metadata
 	metadata := QuotesMetadata{
-		Version:     "1.0",
+		Version:     1,
 		LastUpdated: time.Now().Format(time.RFC3339),
 		TotalQuotes: len(quotes),
-		Schema: Schema{
-			Format:   "JSON",
-			Encoding: "UTF-8",
-			FileType: "application/json",
-		},
+		Url: "my-s3-bucket/quotes.json",
 	}
 
 	quote := MetaDataQuotes{

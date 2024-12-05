@@ -45,7 +45,7 @@ type FlyersMetadata struct {
 }
 
 type MetaDataImages struct {
-	Images         []images.Flyer `json:"images"`
+	Images         []images.Flyer `json:"media"`
 	ImagesMetadata FlyersMetadata `json:"metadata"`
 }
 
