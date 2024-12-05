@@ -1,0 +1,104 @@
+openapi: 3.1.0
+info:
+  title: Admin Content API
+  version: 1.0.0
+  description: API for fetching metadata from the media service.
+  contact:
+    name: Soorya Akilesh
+    email: soorya@abovecloud9.ai
+
+servers:
+  - url: https://abovecloud9.ai/v1/metadata
+
+paths:
+  /media/{type}:
+    get:
+      summary: Get metadata
+      description: Retrieve metadata for quotes, images, or both if no type is specified.
+      parameters:
+        - name: type
+          in: path
+          required: true
+          description: The type of media to fetch metadata for (e.g., "quote" or "image"). If not specified, returns metadata for both.
+          schema:
+            type: string
+            enum:
+              - quote
+              - image
+        - name: quotes
+          in: query
+          description: Retrieve metadata for all quotes.
+          required: false
+        - name: images
+          in: query
+          description: Retrieve metadata for all images.
+          required: false
+      responses:
+        '200':
+          description: Metadata successfully retrieved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  quotes:
+                    type: object
+                    properties:
+                      metadata:
+                        $ref: '#/components/schemas/CommonMetadata'
+                  images:
+                    type: object
+                    properties:
+                      metadata:
+                        $ref: '#/components/schemas/CommonMetadata'
+        '400':
+          description: Bad request. 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    CommonMetadata:
+      type: object
+      properties:
+        version:
+          type: string
+          description: Version of the metadata schema.
+        lastUpdated:
+          type: string
+          format: date-time
+          description: Last updated timestamp.
+        total:
+          type: integer
+          description: Total number of items (quotes or images) in the system.
+        url:
+          type: string
+          description: URL to fetch more detailed metadata.
+    
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+              format: int32
+              description: Error code indicating the type of error.
+            message:
+              type: string
+              description: A brief error message.
+            details:
+              type: string
+              description: Additional information about the error, if available.
+            traceId:
+              type: string
+              description: A unique identifier for tracing the error.
