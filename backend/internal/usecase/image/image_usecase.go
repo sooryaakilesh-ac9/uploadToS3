@@ -1,4 +1,4 @@
-package usecase
+package image
 
 import (
 	"backend/internal/domain/entity"
@@ -9,6 +9,7 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
+	"log"
 	"mime/multipart"
 	"os"
 	"path/filepath"
@@ -125,6 +126,76 @@ func (uc *ImageUseCase) updateMetadata() error {
 		return err
 	}
 	return uc.metadataService.UpdateImageMetadata(images)
+}
+
+func (uc *ImageUseCase) ImportImages(importDir string) (successCount, failureCount int, err error) {
+	// Validate import directory exists
+	if _, err := os.Stat(importDir); os.IsNotExist(err) {
+		return 0, 0, fmt.Errorf("import directory %s does not exist", importDir)
+	}
+
+	// Process each file in the directory
+	entries, err := os.ReadDir(importDir)
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to read directory: %v", err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		filename := entry.Name()
+		if !isValidImageFile(filename) {
+			failureCount++
+			continue
+		}
+
+		if err := uc.processImageFile(importDir, filename); err != nil {
+			log.Printf("Failed to process %s: %v", filename, err)
+			failureCount++
+			continue
+		}
+		successCount++
+	}
+
+	// Update metadata after importing all images
+	if err := uc.updateMetadata(); err != nil {
+		return successCount, failureCount, fmt.Errorf("failed to update metadata: %w", err)
+	}
+
+	return successCount, failureCount, nil
+}
+
+func (uc *ImageUseCase) processImageFile(importDir, filename string) error {
+	sourcePath := filepath.Join(importDir, filename)
+	flyer, err := uc.createFlyer(sourcePath, filename)
+	if err != nil {
+		return fmt.Errorf("failed to create flyer: %w", err)
+	}
+
+	id, err := uc.imageRepo.Store(flyer)
+	if err != nil {
+		return fmt.Errorf("failed to store in database: %w", err)
+	}
+
+	flyer.Id = id
+	flyer.Url = fmt.Sprintf("%s/%d_%s", os.Getenv("S3_BUCKET_NAME"), id, filename)
+	
+	if err := uc.imageRepo.Update(flyer); err != nil {
+		return fmt.Errorf("failed to update flyer URL: %w", err)
+	}
+
+	if err := uc.s3Service.UploadImage(sourcePath, fmt.Sprintf("%d_%s", id, filename)); err != nil {
+		return fmt.Errorf("failed to upload to S3: %w", err)
+	}
+
+	return nil
+}
+
+func isValidImageFile(filename string) bool {
+	ext := strings.ToLower(filepath.Ext(filename))
+	return ext == ".jpg" || ext == ".jpeg" || ext == ".png"
 }
 
 // Additional methods... 

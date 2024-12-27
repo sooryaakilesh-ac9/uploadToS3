@@ -2,6 +2,7 @@ package metadata
 
 import (
 	"backend/internal/domain/entity"
+	"backend/internal/domain/service"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -9,8 +10,14 @@ import (
 	"time"
 )
 
-type MetadataService struct {
-	s3Service S3Service
+type metadataService struct {
+	s3Service service.S3Service
+}
+
+func NewMetadataService(s3Service service.S3Service) service.MetadataService {
+	return &metadataService{
+		s3Service: s3Service,
+	}
 }
 
 type Metadata struct {
@@ -30,13 +37,7 @@ type QuoteMetadata struct {
 	Metadata Metadata       `json:"metadata"`
 }
 
-func NewMetadataService(s3Service S3Service) *MetadataService {
-	return &MetadataService{
-		s3Service: s3Service,
-	}
-}
-
-func (s *MetadataService) UpdateImageMetadata(images []entity.Flyer) error {
+func (s *metadataService) UpdateImageMetadata(images []entity.Flyer) error {
 	metadata := Metadata{
 		Version:     "1",
 		LastUpdated: time.Now().Format(time.RFC3339),
@@ -52,7 +53,7 @@ func (s *MetadataService) UpdateImageMetadata(images []entity.Flyer) error {
 	return s.saveAndUploadMetadata(imageData, "IMAGE_METADATA_PATH", "IMAGE_METADATA_FILENAME", "imagesMetadata.json")
 }
 
-func (s *MetadataService) UpdateQuoteMetadata(quotes []entity.Quote) error {
+func (s *metadataService) UpdateQuoteMetadata(quotes []entity.Quote) error {
 	metadata := Metadata{
 		Version:     "1",
 		LastUpdated: time.Now().Format(time.RFC3339),
@@ -68,7 +69,7 @@ func (s *MetadataService) UpdateQuoteMetadata(quotes []entity.Quote) error {
 	return s.saveAndUploadMetadata(quoteData, "QUOTE_METADATA_PATH", "QUOTE_METADATA_FILENAME", "quotesMetadata.json")
 }
 
-func (s *MetadataService) saveAndUploadMetadata(data interface{}, pathEnv, filenameEnv, defaultFilename string) error {
+func (s *metadataService) saveAndUploadMetadata(data interface{}, pathEnv, filenameEnv, defaultFilename string) error {
 	metadataPath := os.Getenv(pathEnv)
 	metadataFileName := os.Getenv(filenameEnv)
 	if metadataFileName == "" {
