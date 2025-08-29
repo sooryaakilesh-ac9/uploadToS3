@@ -1,7 +1,6 @@
 package db
 
 import (
-	"backend/pkg/images"
 	"backend/pkg/quotes"
 	"fmt"
 	"log"
@@ -54,7 +53,7 @@ func ConnectToDB() (*gorm.DB, error) {
 	}
 
 	// Migrate the 'flyers' table (if it doesn't exist, AutoMigrate will create it)
-	if err := db.AutoMigrate(&images.Flyer{}); err != nil {
+	if err := db.AutoMigrate(&quotes.Quote{}); err != nil {
 		log.Printf("Failed to migrate 'flyers' table: %v", err)
 		return nil, err
 	} else {
