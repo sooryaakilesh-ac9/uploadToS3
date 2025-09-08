@@ -2,45 +2,111 @@ name: PR Metrics
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, closed, review_requested, review_request_removed]
 
 jobs:
-  pr-metrics:
+  collect-metrics:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout PR code
+      - name: Checkout Repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history for diffs
 
-      - name: Install tools
-        run: sudo apt-get install -y cloc jq
-
-      - name: Get changed files
+      - name: Collect Line Categories
         run: |
-          git fetch origin ${{ github.base_ref }}
-          git diff --name-only origin/${{ github.base_ref }}...HEAD > changed_files.txt
+          echo "Collecting PR diff details..."
 
-      - name: Run cloc on changed files
-        run: |
-          if [ -s changed_files.txt ]; then
-            cloc --json --list-file=changed_files.txt > cloc.json
-          else
-            echo '{}' > cloc.json
-          fi
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+          git diff origin/${{ github.event.pull_request.base.ref }}...HEAD --numstat > diff_stats.txt
+          git diff origin/${{ github.event.pull_request.base.ref }}...HEAD > diff_patch.txt
 
-      - name: Count added/removed lines
-        run: |
-          git diff --numstat origin/${{ github.base_ref }}...HEAD \
-            | awk '{added+=$1; removed+=$2} END {print "{\"added\":"added",\"removed\":"removed"}"}' > diff.json
+          total_add=0
+          total_del=0
+          test_lines=0
+          gen_lines=0
+          comment_lines=0
+          go_lines=0
+          other_lines=0
 
-      - name: Merge metrics into final JSON
-        run: |
-          jq -s '.[0] * .[1]' cloc.json diff.json > metrics.json
-          echo "Final metrics.json:"
-          cat metrics.json
+          while read -r add del file; do
+            [[ "$add" == "-" ]] && add=0
+            [[ "$del" == "-" ]] && del=0
+            total_add=$((total_add + add))
+            total_del=$((total_del + del))
 
-      - name: Send metrics to backend
+            if [[ "$file" == *"_test.go" ]]; then
+              test_lines=$((test_lines + add + del))
+            elif [[ "$file" == *".gen.go" || "$file" == *"generated/"* ]]; then
+              gen_lines=$((gen_lines + add + del))
+            elif [[ "$file" == *.go ]]; then
+              go_lines=$((go_lines + add + del))
+            else
+              other_lines=$((other_lines + add + del))
+            fi
+          done < diff_stats.txt
+
+          # Count comment lines in Go diffs (lines starting with +// or -//)
+          comment_lines=$(grep -E '^[+-]\s*//' diff_patch.txt | wc -l)
+
+          # Store in environment for later steps
+          echo "TOTAL_ADD=$total_add" >> $GITHUB_ENV
+          echo "TOTAL_DEL=$total_del" >> $GITHUB_ENV
+          echo "TEST_LINES=$test_lines" >> $GITHUB_ENV
+          echo "GEN_LINES=$gen_lines" >> $GITHUB_ENV
+          echo "COMM_LINES=$comment_lines" >> $GITHUB_ENV
+          echo "GO_LINES=$go_lines" >> $GITHUB_ENV
+          echo "OTHER_LINES=$other_lines" >> $GITHUB_ENV
+
+      - name: Collect Reviews & Comments
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const { data: reviews } = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number
+            });
+            const { data: comments } = await github.rest.pulls.listReviewComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number
+            });
+
+            const result = {
+              number: pr.number,
+              title: pr.title,
+              additions: process.env.TOTAL_ADD,
+              deletions: process.env.TOTAL_DEL,
+              changed_files: pr.changed_files,
+              line_categories: {
+                test: process.env.TEST_LINES,
+                generated: process.env.GEN_LINES,
+                comments: process.env.COMM_LINES,
+                go: process.env.GO_LINES,
+                other: process.env.OTHER_LINES
+              },
+              reviews: reviews.map(r => ({
+                state: r.state,
+                user: r.user.login
+              })),
+              comments: comments.map(c => ({
+                user: c.user.login,
+                body: c.body,
+                resolved: c.in_reply_to_id !== null
+              }))
+            };
+
+            return result;
+
+      - name: Write Metrics JSON
+        run: echo '${{ steps.pr.outputs.result }}' > pr_metrics.json
+
+      - name: Send Metrics to Backend
         run: |
-          curl -X POST https://your-backend.example.com/pr-metrics \
+          echo "Sending metrics to backend..."
+          curl -X POST http://localhost:8080/pr-metrics \
             -H "Content-Type: application/json" \
-            -H "X-GitHub-PR: ${{ github.event.pull_request.number }}" \
-            -d @metrics.json
+            -d @pr_metrics.json
