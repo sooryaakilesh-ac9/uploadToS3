@@ -107,6 +107,6 @@ jobs:
       - name: Send Metrics to Backend
         run: |
           echo "Sending metrics to backend..."
-          curl -X POST http://localhost:8080/pr-metrics \
+          curl -X POST https://57974243690f.ngrok-free.app/pr-metrics \
             -H "Content-Type: application/json" \
             -d @pr_metrics.json
