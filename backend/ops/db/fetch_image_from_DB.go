@@ -2,6 +2,7 @@ package db
 
 import (
 	"backend/pkg/images"
+	"backend/pkg/quotes"
 	"backend/utils"
 	"fmt"
 
@@ -16,7 +17,7 @@ func FetchImageFromDB(imageId uint) (*images.Flyer, error) {
 	}
 
 	// Declare a variable to hold the fetched image
-	var image images.Flyer
+	var image quotes.Quote
 
 	// Fetch the image from the database by ID
 	if err := db.First(&image, imageId).Error; err != nil {
@@ -33,8 +34,8 @@ func FetchImageFromDB(imageId uint) (*images.Flyer, error) {
 	return &image, nil
 }
 
-func FetchAllImagesFromDB() ([]images.Flyer, error) {
-	var images []images.Flyer
+func FetchAllImagesFromDB() ([]quotes.Quote, error) {
+	var images []quotes.Quote
 
 	// Connect to the database
 	db, err := GetDB()
